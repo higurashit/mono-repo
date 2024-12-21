@@ -19,7 +19,7 @@ Resources:
   MGS3Bucket:
     Type: AWS::S3::Bucket
     Properties:
-      BucketName: migration-tool-bucket
+      BucketName: migration-tool-bucket-777
 
   ################################
   # StateMachine
