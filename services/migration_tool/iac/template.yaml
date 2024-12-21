@@ -88,11 +88,11 @@ Resources:
             Effect: Allow
             Resource:
               - !Sub
-                - arn:aws:s3:::${bucket-name}
-                - bucket-name: !Ref MGS3Bucket
+                - arn:aws:s3:::${BucketName}
+                - BucketName: !Ref MGS3Bucket
               - !Sub
-                - arn:aws:s3:::${bucket-name}/*
-                - bucket-name: !Ref MGS3Bucket
+                - arn:aws:s3:::${BucketName}/*
+                - BucketName: !Ref MGS3Bucket
 
   # role for define_src_data function
   MGBasicIAMRoleLambdaFunction:
