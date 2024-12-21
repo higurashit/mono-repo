@@ -2,7 +2,7 @@ Resources:
   ################################
   # Lambda and IAM
   ################################
-  # meowAdvice function
+  # define_src_data function
   F1LambdaFunction:
     UpdateReplacePolicy: Retain
     Type: AWS::Lambda::Function
@@ -17,7 +17,7 @@ Resources:
         UpdateRuntimeOn: Auto
       Handler: app.handler
       Code: ../functions/define_src_data/
-      Role: !GetAtt IAMRoleLFMeowAdvice.Arn
+      Role: !GetAtt IAMRoleF1LambdaFunction.Arn
       FileSystemConfigs: []
       FunctionName: define_src_data
       Runtime: python3.12
@@ -30,7 +30,7 @@ Resources:
       Architectures:
         - x86_64
 
-  # role for meowAdvice function
+  # role for define_src_data function
   IAMRoleF1LambdaFunction:
     UpdateReplacePolicy: Retain
     Type: AWS::IAM::Role
