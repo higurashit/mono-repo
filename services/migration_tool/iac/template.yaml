@@ -33,11 +33,20 @@ Resources:
         MGS3BucketName: !Ref MGS3Bucket
         MGF1LambdaFunctionArn: !GetAtt MGF1LambdaFunction.Arn
         MGF2LambdaFunctionArn: !GetAtt MGF2LambdaFunction.Arn
+        MGF3LambdaFunctionArn: !GetAtt MGF3LambdaFunction.Arn
+        MGF4LambdaFunctionArn: !GetAtt MGF4LambdaFunction.Arn
+        MGF5LambdaFunctionArn: !GetAtt MGF5LambdaFunction.Arn
       Policies:
         - LambdaInvokePolicy:
             FunctionName: !Ref MGF1LambdaFunction
         - LambdaInvokePolicy:
             FunctionName: !Ref MGF2LambdaFunction
+        - LambdaInvokePolicy:
+            FunctionName: !Ref MGF3LambdaFunction
+        - LambdaInvokePolicy:
+            FunctionName: !Ref MGF4LambdaFunction
+        - LambdaInvokePolicy:
+            FunctionName: !Ref MGF5LambdaFunction
         - !Ref MGBasicIAMPolicyStateMachine
     DependsOn:
       - MGBasicIAMPolicyStateMachine
@@ -59,8 +68,22 @@ Resources:
         LogFormat: Text
         LogGroup: /aws/lambda/migration_tool_define_src_data
 
-  # define_migration_settings function
+  # validate_src_data function
   MGF2LambdaFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ../functions/validate_src_data/
+      # Layers:
+      #   - !Ref MyLayer
+      Description: ''
+      Role: !GetAtt MGBasicIAMRoleLambdaFunction.Arn
+      FunctionName: migration_tool_validate_src_data
+      LoggingConfig:
+        LogFormat: Text
+        LogGroup: /aws/lambda/migration_tool_validate_src_data
+
+  # define_migration_settings function
+  MGF3LambdaFunction:
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: ../functions/define_migration_settings/
@@ -72,6 +95,34 @@ Resources:
       LoggingConfig:
         LogFormat: Text
         LogGroup: /aws/lambda/migration_tool_define_migration_settings
+
+  # merge_data function
+  MGF4LambdaFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ../functions/merge_data/
+      # Layers:
+      #   - !Ref MyLayer
+      Description: ''
+      Role: !GetAtt MGBasicIAMRoleLambdaFunction.Arn
+      FunctionName: migration_tool_merge_data
+      LoggingConfig:
+        LogFormat: Text
+        LogGroup: /aws/lambda/migration_tool_merge_data
+
+  # output_data function
+  MGF5LambdaFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ../functions/output_data/
+      # Layers:
+      #   - !Ref MyLayer
+      Description: ''
+      Role: !GetAtt MGBasicIAMRoleLambdaFunction.Arn
+      FunctionName: migration_tool_output_data
+      LoggingConfig:
+        LogFormat: Text
+        LogGroup: /aws/lambda/migration_tool_output_data
 
   ################################
   # IAM

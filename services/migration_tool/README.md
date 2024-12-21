@@ -8,4 +8,5 @@
 - `sam validate`
 - `sam build`
 - `sam package`
+- `sam deploy --no-execute-changeset`
 - `sam deploy`

@@ -50,7 +50,7 @@
           "States": {
             "DefineMigrationData": {
               "Type": "Task",
-              "Resource": "${MGF2LambdaFunctionArn}",
+              "Resource": "${MGF3LambdaFunctionArn}",
               "ResultSelector": {
                 "migration_list.$": "$.migration_list"
               },
@@ -75,7 +75,7 @@
         "States": {
           "MergeData": {
             "Type": "Task",
-            "Resource": "${MGF2LambdaFunctionArn}",
+            "Resource": "${MGF4LambdaFunctionArn}",
             "Next": "RemainSourceData"
           },
           "RemainSourceData": {
@@ -91,7 +91,7 @@
           },
           "OutputData": {
             "Type": "Task",
-            "Resource": "${MGF2LambdaFunctionArn}",
+            "Resource": "${MGF5LambdaFunctionArn}",
             "End": true
           }
         }
