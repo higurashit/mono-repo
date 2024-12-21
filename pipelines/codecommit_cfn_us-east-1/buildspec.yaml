@@ -1,0 +1,28 @@
+version: 0.1
+
+phases:
+  install:
+    commands:
+      - |
+        pip install -U pip
+        pip install awscli>=1.11.61
+  pre_build:
+    commands:
+      - |
+        [ -d .cfn ] || mkdir .cfn
+        aws configure set default.region $AWS_REGION
+        aws cloudformation validate-template --template-body file://cfn.yaml
+  build:
+    commands:
+      - |
+        aws cloudformation package \
+          --template-file cfn.yaml \
+          --s3-bucket $S3_BUCKET \
+          --s3-prefix $S3_PREFIX \
+          --output-template-file .cfn/packaged.yaml
+
+artifacts:
+  files:
+    - .cfn/*
+    - params/*
+  discard-paths: yes

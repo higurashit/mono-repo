@@ -1,0 +1,62 @@
+# Create a stack on us-east-1 (for AWS Certificate Manager)
+
+AWSTemplateFormatVersion: '2010-09-09'
+
+Description: ACM DNS Validation
+
+Metadata:
+  AWS::CloudFormation::Interface:
+    ParameterGroups:
+    - Label:
+        default: Service Information And Check
+      Parameters:
+      - ServiceName
+      - ACMMakeRegion
+    - Label:
+        default: Certificate Range
+      Parameters:
+      - Domain
+      - CertificateRange
+
+Parameters:
+  ServiceName:
+    Type: String
+    Default: 'Test Service'
+    AllowedPattern: ^Test Service$
+  RegionCheck:
+    Description: If you want to associate with CloudFormation, you need to set the REGION to us-east-1. Is it okay?
+    Type: String
+    AllowedValues:
+      - yes
+      - no
+    AllowedPattern: ^yes$
+  Domain:
+    Description: Ex. example.com
+    Type: String
+  CertificateRange:
+    Description: certificate range ( Ex. *, www, www-stg, ... )
+    Type: String
+    Default: '*'
+
+Resources:
+  ACMCertificate:
+    Type: AWS::CertificateManager::Certificate
+    Properties:
+      DomainName: !Join
+        - '.'
+        - - !Ref CertificateRange
+          - !Ref Domain
+      DomainValidationOptions:
+        - DomainName: !Join
+          - '.'
+          - - !Ref CertificateRange
+            - !Ref Domain
+          ValidationDomain: !Ref Domain
+      Tags:
+        - Key: ServiceName
+          Value: '{{resolve:ssm:ServiceName:1}}'
+      ValidationMethod: DNS
+
+Outputs:
+  NextStep:
+    Value: 'Add DNS Record.'

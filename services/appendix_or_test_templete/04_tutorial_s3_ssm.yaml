@@ -1,0 +1,51 @@
+# [Done] install cfn-lint
+# [Done] SSM
+# [Done] S3 + SSM
+# S3 + Cloudfront
+# Lambda
+# Lambda + IAM(access S3)
+# S3 + Cloudfront + Lambda@edge
+# CodePipeline
+# CodePipeline + S3 + Cloudfront + Lambda@edge
+# SNS + SQS
+# SNS + SQS + Lambda
+# API Gateway + SNS + SQS + Lambda
+
+AWSTemplateFormatVersion: "2010-09-09"
+
+Parameters:
+  Env:
+    Type: String
+    Default: dev
+    AllowedValues:
+      - prod
+      - stg
+      - dev
+  SystemName:
+    Type: String
+    Default: web
+    AllowedPattern: ^web$
+
+Resources:
+  WebSiteBucket:
+    Type: 'AWS::S3::Bucket'
+    Properties:
+      BucketName: !Join
+        - '-'
+        - - '{{resolve:ssm:WebSiteBucketName:1}}'
+          - !Ref Env
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
+      VersioningConfiguration:
+        Status: Enabled
+      Tags:
+        - Key: SystemName
+          Value: !Ref SystemName
+        - Key: Env
+          Value: !Ref Env
+
+Outputs:
+  NewWebSiteBucketArn:
+    Value: !GetAtt WebSiteBucket.Arn

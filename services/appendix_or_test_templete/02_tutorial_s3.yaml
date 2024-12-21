@@ -1,0 +1,23 @@
+Parameters:
+  BucketNameToCreate:
+    Description: 'Bucket name to create'
+    Type: String
+
+Resources:
+  Bucket:
+    Type: 'AWS::S3::Bucket'
+    Properties:
+      BucketName: !Ref BucketNameToCreate
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
+      VersioningConfiguration:
+        Status: Enabled
+      Tags:
+        - Key: "siruko-tag-key"
+          Value: "siruko-tag-value"
+
+Outputs:
+  NewBucketName:
+    Value: !Ref BucketNameToCreate

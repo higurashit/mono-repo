@@ -1,0 +1,10 @@
+{
+  "Parameters": {
+    "ServiceName": "static-site",
+    "FrontEndRepositoryName": "static-site-web",
+    "Env": "dev",
+    "CertificatesIdentifier": "7e7cca32-1953-4b48-ad84-ddfac6aaeed4",
+    "DomainName": "siruko.work",
+    "ApprovalEmailAddress": "takujiru6242@gmail.com"
+  }
+}

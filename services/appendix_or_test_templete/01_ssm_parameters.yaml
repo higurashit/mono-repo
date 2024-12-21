@@ -1,0 +1,38 @@
+# Create a stack on ap-northeast-1 and us-east-1 (for AWS Certificate Manager)
+
+AWSTemplateFormatVersion: "2010-09-09"
+
+Parameters:
+  ServiceName:
+    Type: String
+    Default: SirukoWeb
+    AllowedPattern: ^SirukoWeb$
+
+Resources:
+  SSMServiceName:
+    Type: 'AWS::SSM::Parameter'
+    Properties:
+      Name: ServiceName
+      Value: !Ref ServiceName
+      Type: String
+      Tags:
+        ServiceName: !Ref ServiceName
+  SSMWebSiteBucketName:
+    Type: 'AWS::SSM::Parameter'
+    Properties:
+      Name: !Sub '${ServiceName}-WebSiteBucketName'
+      Value: !Join
+        - ''
+        - - !Ref ServiceName
+          - -website-bucket-20201201
+      Type: String
+      Tags:
+        ServiceName: !Ref ServiceName
+  SSMWebSiteBaseDomain:
+    Type: 'AWS::SSM::Parameter'
+    Properties:
+      Name: !Sub '${ServiceName}-WebSiteBaseDomain'
+      Value: siruko.work
+      Type: String
+      Tags:
+        ServiceName: !Ref ServiceName

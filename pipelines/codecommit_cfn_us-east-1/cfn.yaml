@@ -1,0 +1,50 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+
+###############################################################
+# input Parameters
+###############################################################
+Parameters:
+  ServiceName:
+    Type: String
+  RepositoryName:
+    Type: String
+  Env:
+    Type: String
+    AllowedValues:
+      - prod
+      - stg
+      - dev
+      - reserve1
+      - reserve2
+
+###############################################################
+# mappings
+###############################################################
+Mappings:
+  EnvVariablesMap:
+    dev:
+      branchName: develop
+
+###############################################################
+# Resources
+###############################################################
+Resources:
+  ###############################################################
+  # application
+  # -- Web Service Newworking (CloudFront, S3, API Gateway)
+  # -- Buisiness Logic (Lambda)
+  # -- Application Integration (SNS, SQS)
+  # -- Frontend CI/CD Pipeline
+  ###############################################################
+  SSMParamBucketName:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Type: String
+      Name: !Sub '${ServiceName}-test-${Env}'
+      Value: !Join
+        - '::'
+        - - !Ref ServiceName
+          - !Ref RepositoryName
+          - !Ref Env
+          - !FindInMap [ EnvVariablesMap , !Ref Env , branchName ]

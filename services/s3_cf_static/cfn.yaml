@@ -1,0 +1,298 @@
+###############################################################
+# Templete Info
+#   Needs ( in params )
+#     - Frontend Git Repository ( with [master, staging, develop] branches and buildspec.yaml)
+#     - ACM CertificatesIdentifier
+#     - Domain Name ( example.com )
+#   Resources to create
+#     - S3
+#     - CloudFront
+#     - Lambda@Edge
+#     - Frontend CI/CD Pipeline
+#     - [TODO] CloudWatch
+###############################################################
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+
+###############################################################
+# input Parameters
+###############################################################
+Parameters:
+  ServiceName:
+    Type: String
+  FrontEndRepositoryName:
+    Type: String
+  Env:
+    Type: String
+    AllowedValues:
+      - prod
+      - stg
+      - dev
+      - reserve1
+      - reserve2
+  CertificatesIdentifier:
+    Type: String
+  DomainName:
+    Type: String
+  ApprovalEmailAddress:
+    Type: String
+
+###############################################################
+# mappings
+###############################################################
+Mappings:
+  EnvVariablesMap:
+    dev:
+      branchName: develop
+
+###############################################################
+# Resources
+###############################################################
+Resources:
+  ###############################################################
+  # application
+  # -- Web Service Newworking (CloudFront, S3, API Gateway)
+  # -- Buisiness Logic (Lambda)
+  # -- Application Integration (SNS, SQS)
+  ###############################################################
+  SSMParamBucketName:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Type: String
+      Name: !Sub '${ServiceName}-BucketName-${Env}'
+      Value:  !Sub '${DomainName}-website-bucket-25816814'
+  # ------------------------------------------------------------#
+  #  S3 Bucket
+  # ------------------------------------------------------------#
+  S3WebSiteBucket:
+    Type: 'AWS::S3::Bucket'
+    Properties:
+      BucketName: !GetAtt SSMParamBucketName.Value
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
+      VersioningConfiguration:
+        Status: Enabled
+
+  # Restrict access to CloudFront only
+  BucketPolicy:
+    Type: "AWS::S3::BucketPolicy"
+    Properties:
+      Bucket: !Ref S3WebSiteBucket
+      PolicyDocument:
+        Statement:
+        - Action: 's3:GetObject'
+          Effect: Allow
+          Resource: !Sub 'arn:aws:s3:::${S3WebSiteBucket}/*'
+          Principal:
+            CanonicalUser: !GetAtt CloudFrontOriginAccessIdentity.S3CanonicalUserId
+
+  # ------------------------------------------------------------#
+  #  CloudFront
+  # ------------------------------------------------------------#
+  CloudFrontDistribution:
+    Type: 'AWS::CloudFront::Distribution'
+    Properties:
+      DistributionConfig:
+        PriceClass: PriceClass_All
+        Aliases:
+        - !Ref DomainName
+        Origins:
+        - DomainName: !GetAtt S3WebSiteBucket.DomainName
+          Id: !Sub 'S3origin-${SSMParamBucketName.Value}'
+          S3OriginConfig:
+            OriginAccessIdentity: !Sub 'origin-access-identity/cloudfront/${CloudFrontOriginAccessIdentity}'
+        DefaultRootObject: index.html
+        DefaultCacheBehavior:
+          TargetOriginId: !Sub 'S3origin-${SSMParamBucketName.Value}'
+          ViewerProtocolPolicy: redirect-to-https
+          AllowedMethods:
+          - GET
+          - HEAD
+          CachedMethods:
+          - GET
+          - HEAD
+          DefaultTTL: 3600
+          MaxTTL: 86400
+          MinTTL: 60
+          Compress: true
+          ForwardedValues:
+            Cookies:
+              Forward: none
+            QueryString: false
+          LambdaFunctionAssociations:
+            - EventType: origin-request
+              LambdaFunctionARN: !Ref LambdaEdgeS3DirIndex.Version
+        ViewerCertificate:
+          SslSupportMethod: sni-only
+          MinimumProtocolVersion: TLSv1.1_2016
+          AcmCertificateArn: !Sub 'arn:aws:acm:us-east-1:${AWS::AccountId}:certificate/${CertificatesIdentifier}'
+        HttpVersion: http2
+        Enabled: true
+
+  CloudFrontOriginAccessIdentity:
+    Type: 'AWS::CloudFront::CloudFrontOriginAccessIdentity'
+    Properties:
+      CloudFrontOriginAccessIdentityConfig:
+        Comment: !Sub 'access-identity-${S3WebSiteBucket}'
+
+  LambdaEdgeS3DirIndex:
+    Type: AWS::Serverless::Function
+    Properties:
+      Description: Add index.html when accessing directory URL.
+      FunctionName: !Sub '${ServiceName}LambdaEdge${Env}'
+      Runtime: nodejs12.x
+      Handler: index.handler
+      AutoPublishAlias: !Ref Env
+      Role: !GetAtt 'IamLambdaEdgeBasicRole.Arn'
+      CodeUri: src/lambda/handlers/LambdaEdgeS3DirIndex.js
+
+  # ------------------------------------------------------------#
+  #  Lambda@Edge role
+  # ------------------------------------------------------------#
+  IamLambdaEdgeBasicRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub '${ServiceName}-lambdaedge-basic--${Env}'
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/CloudWatchLogsFullAccess
+      Path: /
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+                - edgelambda.amazonaws.com
+            Action:
+              - sts:AssumeRole
+
+
+  ###############################################################
+  # Devops
+  # -- Frontend CI/CD Pipeline
+  # -- CloufWatch Events
+  ###############################################################
+# ------------------------------------------------------------#
+#  S3 bucket
+# ------------------------------------------------------------#
+  ArtifactStoreBucket:
+    Type: 'AWS::S3::Bucket'
+    Properties:
+      BucketName: !Sub '${ServiceName}-artifactstore-${AWS::AccountId}'
+      VersioningConfiguration:
+        Status: Enabled
+  CodeBuildBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub '${ServiceName}-codebuildbucket-${AWS::AccountId}'
+      VersioningConfiguration:
+        Status: Enabled
+
+# ------------------------------------------------------------#
+#  SNSTopic
+# ------------------------------------------------------------#
+  CodePipelineSNSTopic:
+    Type: AWS::SNS::Topic
+    Properties:
+      Subscription:
+        - Protocol: email
+          Endpoint: !Ref ApprovalEmailAddress
+
+# ------------------------------------------------------------#
+#  Pipeline
+# ------------------------------------------------------------#
+  Pipeline:
+    Type: AWS::CodePipeline::Pipeline
+    Properties:
+      Name: !Sub ${ServiceName}-Pipeline-${Env}
+      RoleArn: !GetAtt PipelineRole.Arn
+      ArtifactStore:
+        Type: S3
+        Location: !Ref ArtifactStoreBucket
+      Stages:
+        # get source code
+        - Name: Source
+          Actions:
+            - Name: download-source
+              ActionTypeId:
+                Category: Source
+                Owner: AWS
+                Version: '1'
+                Provider: CodeCommit
+              Configuration:
+                RepositoryName: !Ref FrontEndRepositoryName
+                BranchName: !FindInMap [ EnvVariablesMap, !Ref Env, branchName ]
+              OutputArtifacts:
+                - Name: SourceOutput
+        # Release using CloudFormation
+        - Name: Deploy
+          Actions:
+            - Name: deploy-s3
+              ActionTypeId:
+                Category: Deploy
+                Owner: AWS
+                Version: '1'
+                Provider: Amazon S3
+              Configuration:
+                BucketName: !GetAtt SSMParamBucketName.Value
+                Extract: true
+
+# ------------------------------------------------------------#
+#  IAMRoles
+# ------------------------------------------------------------#
+  CFnRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Action: sts:AssumeRole
+            Principal:
+              Service: cloudformation.amazonaws.com
+      Path: /
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AdministratorAccess
+
+  PipelineRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Action: sts:AssumeRole
+            Effect: Allow
+            Principal:
+              Service: codepipeline.amazonaws.com
+      Path: /
+      Policies:
+        - PolicyName: CodePipelineAccess
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Sid: S3FullAccess
+                Effect: Allow
+                Action: s3:*
+                Resource:
+                  - !Sub arn:aws:s3:::${ArtifactStoreBucket}
+                  - !Sub arn:aws:s3:::${ArtifactStoreBucket}/*
+                  - !Sub arn:aws:s3:::${SSMParamBucketName.Value}
+                  - !Sub arn:aws:s3:::${SSMParamBucketName.Value}/*
+              - Sid: FullAccess
+                Effect: Allow
+                Action:
+                  - cloudformation:*
+                  - iam:PassRole
+                Resource: "*"
+              - Sid: SNSPublishAccess
+                Effect: Allow
+                Action: sns:Publish
+                Resource: !Ref CodePipelineSNSTopic
+              - Sid: CodeCommitAccess
+                Effect: Allow
+                Action:
+                  - codecommit:*
+                Resource: !Sub arn:aws:codecommit:${AWS::Region}:${AWS::AccountId}:${FrontEndRepositoryName}

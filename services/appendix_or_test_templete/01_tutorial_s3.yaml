@@ -1,0 +1,26 @@
+Parameters:
+  ServiceName:
+    Type: String
+    Default: SirukoWeb
+    AllowedPattern: ^SirukoWeb$
+
+Resources:
+  Bucket:
+    Type: 'AWS::S3::Bucket'
+    Properties:
+      BucketName: siruko-test-bucket
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
+      VersioningConfiguration:
+        Status: Enabled
+      Tags:
+        - Key: "siruko-tag-key"
+          Value: "siruko-tag-value"
+
+Outputs:
+  NewWebSiteBucketArn:
+    Value: !GetAtt Bucket.Arn
+  test:
+    Value: !Sub '{{resolve:ssm:${ServiceName}WebSiteBaseDomain:1}}'

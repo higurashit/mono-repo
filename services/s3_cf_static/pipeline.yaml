@@ -1,0 +1,310 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: CloudFormation CI/CD Pipeline by Git Repository
+
+# input Parameters
+Parameters:
+  MyStackName:
+    Type: String
+    Default: BasePipeline-[RepositoryName]-[Env]
+    AllowedPattern: ^BasePipeline-\[RepositoryName\]-\[Env\]$
+  RepositoryName:
+    Type: String
+    Description: for CodeCommit, PipelineName, StackName ...
+  Env:
+    Type: String
+    Description: for Pipeline target branch ( with Mapping )
+    Default: dev
+    AllowedValues:
+      - prod
+      - stg
+      - dev
+      - reserve1
+      - reserve2
+  ApprovalEmailAddress:
+    Type: String
+    Description: for Manual release approval
+    Default: test@example.com
+
+Metadata:
+  AWS::CloudFormation::Interface:
+    ParameterGroups:
+      -
+        Label:
+          default: "Stack Name Refference"
+        Parameters:
+          - MyStackName
+      -
+        Label:
+          default: "Stack Settings"
+        Parameters:
+          - RepositoryName
+          - Env
+          - ApprovalEmailAddress
+    ParameterLabels:
+      MyStackName:
+        default: "[Notice] [Cannot be changed] Please set the Stack Name with the following rules"
+
+Mappings:
+  # Env and branchName mapping
+  EnvVariablesMap:
+    dev:
+      branchName: develop
+
+Resources:
+# ------------------------------------------------------------#
+#  SSM Parameter (common vriables)
+# ------------------------------------------------------------#
+  SSMPipelineStackName:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Type: String
+      Name: !Sub '${RepositoryName}-Pipeline-StackName-${Env}'
+      Value:  !Sub '${RepositoryName}-Pipeline-stack-${Env}'
+  SSMPipelineChangeSetName:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Type: String
+      Name: !Sub '${RepositoryName}-Pipeline-ChangeSetName-${Env}'
+      Value:  !Sub '${RepositoryName}-Pipeline-changeset-${Env}'
+
+# ------------------------------------------------------------#
+#  S3 bucket
+# ------------------------------------------------------------#
+  ArtifactStoreBucket:
+    Type: 'AWS::S3::Bucket'
+    Properties:
+      BucketName: !Sub 'basepipeline-${RepositoryName}-artifactstore-${AWS::AccountId}'
+      VersioningConfiguration:
+        Status: Enabled
+  CodeBuildBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub 'basepipeline-${RepositoryName}-codebuildbucket-${AWS::AccountId}'
+      VersioningConfiguration:
+        Status: Enabled
+
+# ------------------------------------------------------------#
+#  SNSTopic
+# ------------------------------------------------------------#
+  CodePipelineSNSTopic:
+    Type: AWS::SNS::Topic
+    Properties:
+      Subscription:
+        - Protocol: email
+          Endpoint: !Ref ApprovalEmailAddress
+
+# ------------------------------------------------------------#
+#  CodeBuild
+# ------------------------------------------------------------#
+  CodeBuildProject:
+    Type: AWS::CodeBuild::Project
+    Properties:
+      Name: !Sub ${RepositoryName}-Build-${Env}
+      ServiceRole: !GetAtt CodeBuildRole.Arn
+      Artifacts:
+        Type: CODEPIPELINE
+      Environment:
+        Type: LINUX_CONTAINER
+        ComputeType: BUILD_GENERAL1_SMALL
+        Image: aws/codebuild/amazonlinux2-x86_64-standard:3.0
+        EnvironmentVariables:
+          - Name: AWS_REGION
+            Value: us-east-1 # for CloudFront and lambdaedge
+          - Name: S3_BUCKET
+            Value: !Ref CodeBuildBucket
+          - Name: S3_PREFIX
+            Value: !Sub ${Env}
+      Source:
+        BuildSpec: buildspec.yaml
+        Type: CODEPIPELINE
+
+# ------------------------------------------------------------#
+#  Pipeline
+# ------------------------------------------------------------#
+  Pipeline:
+    Type: AWS::CodePipeline::Pipeline
+    Properties:
+      Name: !Sub ${RepositoryName}-Pipeline-${Env}
+      RoleArn: !GetAtt PipelineRole.Arn
+      ArtifactStore:
+        Type: S3
+        Location: !Ref ArtifactStoreBucket
+      Stages:
+        # get source code
+        - Name: Source
+          Actions:
+            - Name: download-source
+              ActionTypeId:
+                Category: Source
+                Owner: AWS
+                Version: '1'
+                Provider: CodeCommit
+              Configuration:
+                RepositoryName: !Ref RepositoryName
+                BranchName: !FindInMap [ EnvVariablesMap, !Ref Env, branchName ]
+              OutputArtifacts:
+                - Name: SourceOutput
+        # testing with CodeBuildProject ( buildspec.yaml )
+        - Name: Test
+          Actions:
+            - InputArtifacts:
+                - Name: SourceOutput
+              Name: testing
+              ActionTypeId:
+                Category: Test
+                Owner: AWS
+                Version: '1'
+                Provider: CodeBuild
+              OutputArtifacts:
+                - Name: TestOutput
+              Configuration:
+                ProjectName: !Ref CodeBuildProject
+        # create CloudFormation changeset to TemplatePath ( in CodeBuildProject ( buildspec.yaml ))
+        - Name: Build
+          Actions:
+            - InputArtifacts:
+                - Name: TestOutput
+              Name: create-changeset
+              ActionTypeId:
+                Category: Deploy
+                Owner: AWS
+                Version: '1'
+                Provider: CloudFormation
+              OutputArtifacts:
+                - Name: BuildOutput
+              Configuration:
+                ActionMode: CHANGE_SET_REPLACE
+                ChangeSetName: !GetAtt SSMPipelineChangeSetName.Value
+                RoleArn: !GetAtt CFnRole.Arn
+                Capabilities: CAPABILITY_IAM,CAPABILITY_NAMED_IAM
+                StackName: !GetAtt SSMPipelineStackName.Value
+                TemplatePath: TestOutput::packaged.yaml
+                TemplateConfiguration: !Sub TestOutput::param.${Env}.json
+        # Approve the release
+        - Name: Approval
+          Actions:
+            - Name: approve-changeset
+              ActionTypeId:
+                Category: Approval
+                Owner: AWS
+                Version: '1'
+                Provider: Manual
+              Configuration:
+                NotificationArn: !Ref CodePipelineSNSTopic
+                ExternalEntityLink: !Sub https://console.aws.amazon.com/cloudformation/home?region=${AWS::Region}
+                CustomData: Please review changeset
+        # Release using CloudFormation
+        - Name: Deploy
+          Actions:
+            - Name: execute-changeset
+              ActionTypeId:
+                Category: Deploy
+                Owner: AWS
+                Version: '1'
+                Provider: CloudFormation
+              Configuration:
+                StackName: !GetAtt SSMPipelineStackName.Value
+                ActionMode: CHANGE_SET_EXECUTE
+                ChangeSetName: !GetAtt SSMPipelineChangeSetName.Value
+                RoleArn: !GetAtt CFnRole.Arn
+
+# ------------------------------------------------------------#
+#  IAMRoles
+# ------------------------------------------------------------#
+  CFnRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Action: sts:AssumeRole
+            Principal:
+              Service: cloudformation.amazonaws.com
+      Path: /
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AdministratorAccess
+
+  PipelineRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Action: sts:AssumeRole
+            Effect: Allow
+            Principal:
+              Service: codepipeline.amazonaws.com
+      Path: /
+      Policies:
+        - PolicyName: CodePipelineAccess
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Sid: S3FullAccess
+                Effect: Allow
+                Action: s3:*
+                Resource:
+                  - !Sub arn:aws:s3:::${ArtifactStoreBucket}
+                  - !Sub arn:aws:s3:::${ArtifactStoreBucket}/*
+              - Sid: FullAccess
+                Effect: Allow
+                Action:
+                  - cloudformation:*
+                  - iam:PassRole
+                Resource: "*"
+              - Sid: SNSPublishAccess
+                Effect: Allow
+                Action: sns:Publish
+                Resource: !Ref CodePipelineSNSTopic
+              - Sid: CodeCommitAccess
+                Effect: Allow
+                Action:
+                  - codecommit:*
+                Resource: !Sub arn:aws:codecommit:${AWS::Region}:${AWS::AccountId}:${RepositoryName}
+              - Sid: CodeBuildAccess
+                Effect: Allow
+                Action:
+                  - codebuild:BatchGetBuilds
+                  - codebuild:StartBuild
+                Resource: !GetAtt CodeBuildProject.Arn
+
+  CodeBuildRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Action: sts:AssumeRole
+            Effect: Allow
+            Principal:
+              Service: codebuild.amazonaws.com
+      Path: /
+      Policies:
+        - PolicyName: CodeBuildAccess
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Sid: CloudWatchLogsAccess
+                Effect: Allow
+                Action:
+                  - logs:CreateLogGroup
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                Resource:
+                  - !Sub arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/codebuild/*
+              - Sid: S3Access
+                Effect: Allow
+                Action:
+                  - s3:PutObject
+                  - s3:GetObject
+                  - s3:GetObjectVersion
+                Resource:
+                  - !Sub arn:aws:s3:::${ArtifactStoreBucket}
+                  - !Sub arn:aws:s3:::${ArtifactStoreBucket}/*
+                  - !Sub arn:aws:s3:::${CodeBuildBucket}
+                  - !Sub arn:aws:s3:::${CodeBuildBucket}/*
+              - Sid: CloudFormationAccess
+                Effect: Allow
+                Action: cloudformation:ValidateTemplate
+                Resource: "*"
