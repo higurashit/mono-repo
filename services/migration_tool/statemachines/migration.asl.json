@@ -4,7 +4,7 @@
   "States": {
     "DefineSourceData": {
       "Type": "Task",
-      "Resource": "${F1LambdaFunction}",
+      "Resource": "${MGF1LambdaFunctionArn}",
       "Next": "Parallel",
       "ResultSelector": {
         "src_file_list.$": "$.src_file_list"
@@ -26,7 +26,7 @@
                   "CheckSourceDataExistence": {
                     "Type": "Task",
                     "Parameters": {
-                      "Bucket": "siruko-cloudformation-templetes",
+                      "Bucket": "${MGS3Bucket}",
                       "Key": "migrationTest.json"
                     },
                     "Resource": "arn:aws:states:::aws-sdk:s3:getObject",
@@ -34,7 +34,7 @@
                   },
                   "ValidateSourceData": {
                     "Type": "Task",
-                    "Resource": "${F2LambdaFunction}",
+                    "Resource": "${MGF2LambdaFunctionArn}",
                     "End": true
                   }
                 }
@@ -50,7 +50,7 @@
           "States": {
             "DefineMigrationData": {
               "Type": "Task",
-              "Resource": "${F2LambdaFunction}",
+              "Resource": "${MGF2LambdaFunctionArn}",
               "ResultSelector": {
                 "migration_list.$": "$.migration_list"
               },
@@ -75,7 +75,7 @@
         "States": {
           "MergeData": {
             "Type": "Task",
-            "Resource": "${F2LambdaFunction}",
+            "Resource": "${MGF2LambdaFunctionArn}",
             "Next": "RemainSourceData"
           },
           "RemainSourceData": {
@@ -91,7 +91,7 @@
           },
           "OutputData": {
             "Type": "Task",
-            "Resource": "${F2LambdaFunction}",
+            "Resource": "${MGF2LambdaFunctionArn}",
             "End": true
           }
         }

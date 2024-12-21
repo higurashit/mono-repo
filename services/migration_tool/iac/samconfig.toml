@@ -7,11 +7,6 @@ region = "ap-northeast-1"
 stack_name = "MigrationToolStack"
 s3_bucket = "siruko-cloudformation-templetes"
 
-[default.package]
-[default.package.parameters]
-output-template-file = "packaged-template.yaml"
-
 [default.deploy]
 [default.deploy.parameters]
-template-file = "packaged-template.yaml"
 capabilities = "CAPABILITY_NAMED_IAM"

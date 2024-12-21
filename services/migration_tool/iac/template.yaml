@@ -14,27 +14,39 @@ Globals:
 
 Resources:
   ################################
+  # S3 Bucket
+  ################################
+  MGS3Bucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: migration-tool-bucket
+
+  ################################
   # StateMachine
   ################################
-  S1StateMachine:
+  MGS1StateMachine:
     Type: AWS::Serverless::StateMachine
     Properties:
       Name: MigrationStateMachine
       DefinitionUri: ../statemachines/migration.asl.json
       DefinitionSubstitutions:
-        F1LambdaFunctionArn: !GetAtt F1LambdaFunction.Arn
-        F2LambdaFunctionArn: !GetAtt F2LambdaFunction.Arn
+        MGS3BucketName: !Ref MGS3Bucket
+        MGF1LambdaFunctionArn: !GetAtt MGF1LambdaFunction.Arn
+        MGF2LambdaFunctionArn: !GetAtt MGF2LambdaFunction.Arn
       Policies:
         - LambdaInvokePolicy:
-            FunctionName: !Ref F1LambdaFunction
+            FunctionName: !Ref MGF1LambdaFunction
         - LambdaInvokePolicy:
-            FunctionName: !Ref F2LambdaFunction
+            FunctionName: !Ref MGF2LambdaFunction
+        - !Ref MGBasicIAMPolicyStateMachine
+    DependsOn:
+      - MGBasicIAMPolicyStateMachine
 
   ################################
   # Lambda
   ################################
   # define_src_data function
-  F1LambdaFunction:
+  MGF1LambdaFunction:
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: ../functions/define_src_data/
@@ -48,7 +60,7 @@ Resources:
         LogGroup: /aws/lambda/migration_tool_define_src_data
 
   # define_migration_settings function
-  F2LambdaFunction:
+  MGF2LambdaFunction:
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: ../functions/define_migration_settings/
@@ -64,6 +76,24 @@ Resources:
   ################################
   # IAM
   ################################
+  # Additional policy for statemachine
+  MGBasicIAMPolicyStateMachine:
+    Type: AWS::IAM::ManagedPolicy
+    Properties:
+      ManagedPolicyName: MGBasicIAMPolicyStateMachine
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Action: s3:*
+            Effect: Allow
+            Resource:
+              - !Sub
+                - arn:aws:s3:::${bucket-name}
+                - bucket-name: !Ref MGS3Bucket
+              - !Sub
+                - arn:aws:s3:::${bucket-name}/*
+                - bucket-name: !Ref MGS3Bucket
+
   # role for define_src_data function
   MGBasicIAMRoleLambdaFunction:
     UpdateReplacePolicy: Retain
