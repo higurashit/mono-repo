@@ -1,0 +1,73 @@
+Resources:
+  ################################
+  # Lambda and IAM
+  ################################
+  # meowAdvice function
+  F1LambdaFunction:
+    UpdateReplacePolicy: Retain
+    Type: AWS::Lambda::Function
+    DeletionPolicy: Delete
+    Properties:
+      MemorySize: 128
+      Description: ''
+      TracingConfig:
+        Mode: PassThrough
+      Timeout: 30
+      RuntimeManagementConfig:
+        UpdateRuntimeOn: Auto
+      Handler: app.handler
+      Code: ../functions/define_src_data/
+      Role: !GetAtt IAMRoleLFMeowAdvice.Arn
+      FileSystemConfigs: []
+      FunctionName: define_src_data
+      Runtime: python3.12
+      PackageType: Zip
+      LoggingConfig:
+        LogFormat: Text
+        LogGroup: /aws/lambda/define_src_data
+      EphemeralStorage:
+        Size: 512
+      Architectures:
+        - x86_64
+
+  # role for meowAdvice function
+  IAMRoleF1LambdaFunction:
+    UpdateReplacePolicy: Retain
+    Type: AWS::IAM::Role
+    DeletionPolicy: Delete
+    Properties:
+      Path: /service-role/
+      ManagedPolicyArns:
+        - !Ref IAMManagedPolicyF1LambdaFunction
+      MaxSessionDuration: 3600
+      RoleName: IAMRoleF1LambdaFunction
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Action: sts:AssumeRole
+            Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+  IAMManagedPolicyF1LambdaFunction:
+    UpdateReplacePolicy: Retain
+    Type: AWS::IAM::ManagedPolicy
+    DeletionPolicy: Delete
+    Properties:
+      ManagedPolicyName: IAMManagedPolicyF1LambdaFunction
+      Path: /service-role/
+      Description: ''
+      Groups: []
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Resource: !Sub arn:aws:logs:${AWS::Region}:${AWS::AccountId}:*
+            Action: logs:CreateLogGroup
+            Effect: Allow
+          - Resource:
+              - !Sub arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/F1LambdaFunction:*
+            Action:
+              - logs:CreateLogStream
+              - logs:PutLogEvents
+            Effect: Allow
+      Roles: []
+      Users: []
