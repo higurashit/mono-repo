@@ -26,7 +26,7 @@
                   "CheckSourceDataExistence": {
                     "Type": "Task",
                     "Parameters": {
-                      "Bucket": "${MGS3Bucket}",
+                      "Bucket": "${MGS3BucketName}",
                       "Key": "migrationTest.json"
                     },
                     "Resource": "arn:aws:states:::aws-sdk:s3:getObject",
