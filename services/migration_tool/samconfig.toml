@@ -1,0 +1,16 @@
+[default]
+[default.build]
+[default.build.parameters]
+template-file ="iac/template.yaml"
+
+[default.package]
+[default.package.parameters]
+template-file = ".aws-sam/build/template.yaml"
+s3_bucket = "siruko-cloudformation-templetes"
+output-template-file = "packaged-template.yaml"
+
+[default.deploy]
+[default.deploy.parameters]
+template-file = "packaged-template.yaml"
+stack_name = "MigrationToolStack"
+capabilities = "CAPABILITY_NAMED_IAM"

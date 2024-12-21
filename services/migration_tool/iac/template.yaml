@@ -1,26 +1,30 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+
+Globals:
+  Function:
+    Timeout: 10
+    MemorySize: 128
+
 Resources:
   ################################
   # Lambda and IAM
   ################################
   # define_src_data function
   F1LambdaFunction:
-    UpdateReplacePolicy: Retain
-    Type: AWS::Lambda::Function
-    DeletionPolicy: Delete
+    Type: AWS::Serverless::Function
     Properties:
-      MemorySize: 128
+      CodeUri: ../functions/define_src_data/
+      Handler: app.handler
+      Runtime: python3.9
+      # Layers:
+      #   - !Ref MyLayer
       Description: ''
-      TracingConfig:
-        Mode: PassThrough
-      Timeout: 30
       RuntimeManagementConfig:
         UpdateRuntimeOn: Auto
-      Handler: app.handler
-      Code: ../functions/define_src_data/
       Role: !GetAtt IAMRoleF1LambdaFunction.Arn
       FileSystemConfigs: []
       FunctionName: define_src_data
-      Runtime: python3.12
       PackageType: Zip
       LoggingConfig:
         LogFormat: Text
