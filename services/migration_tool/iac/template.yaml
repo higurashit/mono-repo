@@ -3,48 +3,78 @@ Transform: AWS::Serverless-2016-10-31
 
 Globals:
   Function:
+    Runtime: python3.9
+    Handler: app.handler
+    Architectures:
+      - x86_64
     Timeout: 10
     MemorySize: 128
+    EphemeralStorage:
+      Size: 512
 
 Resources:
   ################################
-  # Lambda and IAM
+  # StateMachine
+  ################################
+  S1StateMachine:
+    Type: AWS::Serverless::StateMachine
+    Properties:
+      Name: MigrationStateMachine
+      DefinitionUri: ../statemachines/migration.asl.json
+      DefinitionSubstitutions:
+        F1LambdaFunctionArn: !GetAtt F1LambdaFunction.Arn
+        F2LambdaFunctionArn: !GetAtt F2LambdaFunction.Arn
+      Policies:
+        - LambdaInvokePolicy:
+            FunctionName: !Ref F1LambdaFunction
+        - LambdaInvokePolicy:
+            FunctionName: !Ref F2LambdaFunction
+
+  ################################
+  # Lambda
   ################################
   # define_src_data function
   F1LambdaFunction:
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: ../functions/define_src_data/
-      Handler: app.handler
-      Runtime: python3.9
       # Layers:
       #   - !Ref MyLayer
       Description: ''
-      RuntimeManagementConfig:
-        UpdateRuntimeOn: Auto
-      Role: !GetAtt IAMRoleF1LambdaFunction.Arn
-      FileSystemConfigs: []
-      FunctionName: define_src_data
-      PackageType: Zip
+      Role: !GetAtt MGBasicIAMRoleLambdaFunction.Arn
+      FunctionName: migration_tool_define_src_data
       LoggingConfig:
         LogFormat: Text
-        LogGroup: /aws/lambda/define_src_data
-      EphemeralStorage:
-        Size: 512
-      Architectures:
-        - x86_64
+        LogGroup: /aws/lambda/migration_tool_define_src_data
 
+  # define_migration_settings function
+  F2LambdaFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ../functions/define_migration_settings/
+      # Layers:
+      #   - !Ref MyLayer
+      Description: ''
+      Role: !GetAtt MGBasicIAMRoleLambdaFunction.Arn
+      FunctionName: migration_tool_define_migration_settings
+      LoggingConfig:
+        LogFormat: Text
+        LogGroup: /aws/lambda/migration_tool_define_migration_settings
+
+  ################################
+  # IAM
+  ################################
   # role for define_src_data function
-  IAMRoleF1LambdaFunction:
+  MGBasicIAMRoleLambdaFunction:
     UpdateReplacePolicy: Retain
     Type: AWS::IAM::Role
     DeletionPolicy: Delete
     Properties:
       Path: /service-role/
       ManagedPolicyArns:
-        - !Ref IAMManagedPolicyF1LambdaFunction
+        - !Ref MGBasicIAMManagedPolicyLambdaFunction
       MaxSessionDuration: 3600
-      RoleName: IAMRoleF1LambdaFunction
+      RoleName: MGBasicIAMRoleLambdaFunction
       AssumeRolePolicyDocument:
         Version: '2012-10-17'
         Statement:
@@ -52,12 +82,12 @@ Resources:
             Effect: Allow
             Principal:
               Service: lambda.amazonaws.com
-  IAMManagedPolicyF1LambdaFunction:
+  MGBasicIAMManagedPolicyLambdaFunction:
     UpdateReplacePolicy: Retain
     Type: AWS::IAM::ManagedPolicy
     DeletionPolicy: Delete
     Properties:
-      ManagedPolicyName: IAMManagedPolicyF1LambdaFunction
+      ManagedPolicyName: MGBasicIAMManagedPolicyLambdaFunction
       Path: /service-role/
       Description: ''
       Groups: []
@@ -68,7 +98,7 @@ Resources:
             Action: logs:CreateLogGroup
             Effect: Allow
           - Resource:
-              - !Sub arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/F1LambdaFunction:*
+              - !Sub arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/*:*
             Action:
               - logs:CreateLogStream
               - logs:PutLogEvents

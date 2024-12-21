@@ -1,0 +1,103 @@
+{
+  "Comment": "Migration Tool State Machine",
+  "StartAt": "DefineSourceData",
+  "States": {
+    "DefineSourceData": {
+      "Type": "Task",
+      "Resource": "${F1LambdaFunction}",
+      "Next": "Parallel",
+      "ResultSelector": {
+        "src_file_list.$": "$.src_file_list"
+      },
+      "ResultPath": "$.SourceData"
+    },
+    "Parallel": {
+      "Type": "Parallel",
+      "Next": "CreateMigrationData",
+      "Branches": [
+        {
+          "StartAt": "CheckSourceData",
+          "States": {
+            "CheckSourceData": {
+              "Type": "Map",
+              "Iterator": {
+                "StartAt": "CheckSourceDataExistence",
+                "States": {
+                  "CheckSourceDataExistence": {
+                    "Type": "Task",
+                    "Parameters": {
+                      "Bucket": "siruko-cloudformation-templetes",
+                      "Key": "migrationTest.json"
+                    },
+                    "Resource": "arn:aws:states:::aws-sdk:s3:getObject",
+                    "Next": "ValidateSourceData"
+                  },
+                  "ValidateSourceData": {
+                    "Type": "Task",
+                    "Resource": "${F2LambdaFunction}",
+                    "End": true
+                  }
+                }
+              },
+              "ItemsPath": "$.SourceData.src_file_list",
+              "End": true,
+              "ResultPath": null
+            }
+          }
+        },
+        {
+          "StartAt": "DefineMigrationData",
+          "States": {
+            "DefineMigrationData": {
+              "Type": "Task",
+              "Resource": "${F2LambdaFunction}",
+              "ResultSelector": {
+                "migration_list.$": "$.migration_list"
+              },
+              "ResultPath": "$.MigrationData",
+              "End": true
+            }
+          }
+        }
+      ],
+      "ResultSelector": {
+        "migration_list.$": "$.[1].MigrationData.migration_list"
+      },
+      "ResultPath": "$.MigrationData"
+    },
+    "CreateMigrationData": {
+      "Type": "Map",
+      "ItemProcessor": {
+        "ProcessorConfig": {
+          "Mode": "INLINE"
+        },
+        "StartAt": "MergeData",
+        "States": {
+          "MergeData": {
+            "Type": "Task",
+            "Resource": "${F2LambdaFunction}",
+            "Next": "RemainSourceData"
+          },
+          "RemainSourceData": {
+            "Type": "Choice",
+            "Choices": [
+              {
+                "Variable": "$.continue",
+                "BooleanEquals": true,
+                "Next": "MergeData"
+              }
+            ],
+            "Default": "OutputData"
+          },
+          "OutputData": {
+            "Type": "Task",
+            "Resource": "${F2LambdaFunction}",
+            "End": true
+          }
+        }
+      },
+      "End": true,
+      "ItemsPath": "$.MigrationData.migration_list"
+    }
+  }
+}

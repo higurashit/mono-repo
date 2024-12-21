@@ -4,15 +4,8 @@ version = 0.1
 [default.global]
 [default.global.parameters]
 region = "ap-northeast-1"
-template-file = "iac/template.yaml"
 stack_name = "MigrationToolStack"
 s3_bucket = "siruko-cloudformation-templetes"
-
-[default.validate]
-[default.validate.parameters]
-
-[default.build]
-[default.build.parameters]
 
 [default.package]
 [default.package.parameters]
