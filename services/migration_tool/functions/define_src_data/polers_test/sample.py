@@ -25,43 +25,85 @@ def test3():
   print(ret)
 
 def test_concat2():
-  key_col = ['ID_1', 'ID_2']
-  data_col = ['name', 'age', 'birth', 'other']
+  final_cols = ['ID_1', 'ID_2', 'other', 'name', 'age', 'birth', 'lucky_color']
+  key_cols = ['ID_1', 'ID_2']
+  default_values = {
+    'other': 'defult_other',
+    'name': '',
+    'age': 0,
+    'birth': '',
+  }
   moto1 = pl.DataFrame({
-    'ID_1': [1, 2, 3],
-    'ID_2': [11, 22, 33],
-    'name': ['A', 'B', 'C'],
-    'age': [10, 20, 30],
-    'birth': ['1986/12/17', None, '2025/1/17'],
+    'ID_1': [1, 2, 3, 4],
+    'ID_2': [11, 22, 33, 44],
+    'name': ['A', 'B', 'C', 'D'],
+    'age': [10, 20, 30, None],
+    'birth': ['1986/12/17', None, '2025/1/17', None],
   })
   moto2 = pl.DataFrame({
-    'ID_1': [1, 3, 5],
-    'ID_2': [11, 23, 55],
-    'name': ['AAA', 'CCC', 'EEE'],
+    'ID_1': [1, 3, 5, 2, 4],
+    'ID_2': [11, 23, 55, 22, 44],
+    'name': ['AAA', 'CCC', 'EEE', None, ''],
+    'lucky_color': ['red', 'yellow', 'blue', None, None]
   })
 
   # 両方のキーをマージ
-  key = pl.concat([moto1[key_col], moto2[key_col]]).unique().sort(by=key_col)
+  key = pl.concat([moto1[key_cols], moto2[key_cols]]).unique().sort(by=key_cols)
   print(f'key: {key}')
 
   # データをマージ
-  ret = key
-  print(f'start: {ret}')
-  ret = ret.join(moto1, on=key_col, how='left')
-  print(f'key join moto1: {ret}')
-  ret = ret.join(moto2, on=key_col, how='left')
-  print(f'moto1 join moto2: {ret}')
+  prev_df = key
+  for next_df in [moto1, moto2]:
+    # マージ用のクエリを生成
+    merge_query = create_merge_query(
+      final_cols,
+      prev_df.columns,
+      next_df.columns,
+      key_cols,
+      default_values,
+    )
+    print(f'merge query: {merge_query}')
+    # マージ
+    prev_df = prev_df.join(next_df, on=key_cols, how='left').select(merge_query)
+    print(f'merged df: {prev_df}')
 
-  ret = ret.select([
-    pl.lit(None).alias('dummy'),
-    pl.col('ID_1'),
-    pl.col('ID_2'),
-    pl.col('name').fill_null(''),
-    pl.col('age').fill_null(0),
-    pl.col('birth').fill_null(''),
-    pl.lit(None).alias('dummy2'),
-  ])
-  print(f'select: {ret}')
+def create_merge_query(final_cols, prev_cols, next_cols, key_cols, default_values):
+  query = []
+  # 最終結果用のカラムごとにループ
+  for col in final_cols:
+    # キーの場合は変更なし
+    if col in key_cols:
+      query.append(pl.col(col))
+      continue
+    
+    if col in prev_cols:
+      # 元データ、先データ両方に存在する場合、
+      # かつ、先データがnullでなく空文字でもない場合は先データ(_right)で上書き
+      if col in next_cols:
+        next_col = f'{col}_right'
+        query.append(
+          pl.when(
+            (pl.col(next_col).is_null())
+            | (pl.col(next_col) == '')
+          ).then(pl.col(col))
+          .otherwise(pl.col(next_col)
+          .alias(col))
+        )
+      # 元データのみ存在する場合は元データを利用
+      else:
+        query.append(pl.col(col))
+    else:
+      # 先データのみ存在する場合は先データを利用
+      if col in next_cols:
+        query.append(pl.col(col))
+      # 元データ、先データのどちらにも存在しない場合はデフォルト値を設定
+      else:
+        default_value = ''
+        if col in default_values:
+          default_value = default_values.get(col)
+        query.append(pl.lit(default_value).alias(col))
+  
+  return query
 
 def test_concat():
   # 最終データ
