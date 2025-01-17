@@ -131,10 +131,8 @@ def create_merge_query(final_cols, prev_cols, next_cols, finel_key_cols):
       if col in next_cols:
         next_col = f'{col}_right'
         query.append(
-          pl.when(
-            (pl.col(next_col).is_null())
-            | (pl.col(next_col) == '')
-          ).then(pl.col(col))
+          pl.when(is_null_or_blank(next_col))
+          .then(pl.col(col))
           .otherwise(pl.col(next_col)
           .alias(col))
         )
@@ -158,10 +156,8 @@ def set_default_values(df, default_values):
     if col in default_values:
       default_value = default_values.get(col)
       query.append(
-        pl.when(
-          (pl.col(col).is_null())
-          | (pl.col(col) == '')
-        ).then(pl.lit(default_value))
+        pl.when(is_null_or_blank(col))
+        .then(pl.lit(default_value))
         .otherwise(pl.col(col))
         .alias(col)
       )
@@ -170,6 +166,9 @@ def set_default_values(df, default_values):
       query.append(pl.col(col))
 
   return df.select(query)
+
+def is_null_or_blank(column):
+  return (pl.col(column).is_null()) | (pl.col(column) == '')
 
 if __name__ == '__main__':
     hanlder()
