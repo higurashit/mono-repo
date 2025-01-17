@@ -7,14 +7,14 @@ import polars as pl
 def hanlder(e={}):
 
   # 移行定義情報をロード
-  final_cols, finel_key_cols, default_values, dfs, dfs_keys = read_definition()
+  final_cols, final_key_cols, default_values, dfs, dfs_keys = read_definition()
 
   # 元データを初期化
-  dfs = initialize_dfs(dfs, dfs_keys, finel_key_cols)
+  dfs = initialize_dfs(dfs, dfs_keys, final_key_cols)
   print(f'dfs: {dfs}')
   
   # 元データを順にマージ
-  merged_df = merge_dfs(dfs, finel_key_cols, final_cols)
+  merged_df = merge_dfs(dfs, final_key_cols, final_cols)
 
   # デフォルト値の設定
   result_df = set_default_values(merged_df, default_values)
@@ -36,7 +36,7 @@ def read_definition():
   print(ret)
 
   final_cols = ['HOGE', 'ID_1', 'ID_2', 'other', 'name', 'age', 'birth', 'lucky_color']
-  finel_key_cols = ['ID_1', 'ID_2']
+  final_key_cols = ['ID_1', 'ID_2']
   default_values = {
     'other': 'No other information.',
     'name': 'No name',
@@ -61,29 +61,30 @@ def read_definition():
 
   return (
     final_cols,
-    finel_key_cols,
+    final_key_cols,
     default_values,
     [moto1, moto2],
     [moto1_key_cols, moto2_key_cols]
   )
 
-def initialize_dfs(dfs, dfs_keys, finel_key_cols):
+def initialize_dfs(dfs, dfs_keys, final_key_cols):
   # 全データをstrにキャスト
   dfs = [cast_to_str(df) for df in dfs]
-  # キーの名前を統一
+  
+  # マージ用にキーの名前を統一する
   result_dfs = []
+  # dfごとにループ
   for idx_df, df in enumerate(dfs):
     query = []
+    # カラムごとにループ
     for idx_col, col in enumerate(df.columns):
-      # キーのカラムの場合、最終形のカラム名に訂正
+      # カラムが該当dfのキーの場合、最終出力時のカラム名に訂正
       if col in dfs_keys[idx_df]:
-        print(f'Its key: {col}')
-        query.append(pl.col(col).alias(finel_key_cols[idx_col]))
+        query.append(pl.col(col).alias(final_key_cols[idx_col]))
       else:
-        print(f'Its not key: {col}')
         query.append(pl.col(col))
     
-    # 列名変更後のdfを返却値に追加
+    # カラム名変更後のdfを返却値に追加
     print(f'query: {query}')
     result_dfs.append(df.select(query))
 
@@ -91,12 +92,13 @@ def initialize_dfs(dfs, dfs_keys, finel_key_cols):
 
 def cast_to_str(df):
   return df.with_columns(
+    # すべてのカラムをutf8にキャスト
     [pl.col(col).cast(pl.Utf8).alias(col) for col in df.columns]
   )
 
-def merge_dfs(dfs, finel_key_cols, final_cols):
+def merge_dfs(dfs, final_key_cols, final_cols):
   # 両方のキーをマージし、キーのみのdfを作成
-  key_only_df = pl.concat([df[finel_key_cols] for df in dfs]).unique().sort(by=finel_key_cols)
+  key_only_df = pl.concat([df[final_key_cols] for df in dfs]).unique().sort(by=final_key_cols)
   print(f'key: {key_only_df}')
 
   # 元データのdfを順番にマージ
@@ -104,24 +106,24 @@ def merge_dfs(dfs, finel_key_cols, final_cols):
   for next_df in dfs:
     # マージ用のクエリを生成
     merge_query = create_merge_query(
-      final_cols,
       prev_df.columns,
       next_df.columns,
-      finel_key_cols,
+      final_key_cols,
+      final_cols,
     )
     print(f'merge query: {merge_query}')
     # マージの実行
-    prev_df = prev_df.join(next_df, on=finel_key_cols, how='left').select(merge_query)
+    prev_df = prev_df.join(next_df, on=final_key_cols, how='left').select(merge_query)
     print(f'merged df: {prev_df}')
 
   return prev_df
 
-def create_merge_query(final_cols, prev_cols, next_cols, finel_key_cols):
+def create_merge_query(prev_cols, next_cols, final_key_cols, final_cols):
   query = []
   # 最終結果用のカラムごとにループ
   for col in final_cols:
     # キーの場合は変更なし
-    if col in finel_key_cols:
+    if col in final_key_cols:
       query.append(pl.col(col))
       continue
     
