@@ -1,4 +1,10 @@
 import polars as pl
+from pydantic import create_model, ValidationError
+from contextlib import contextmanager
+from datetime import datetime
+import time
+
+DEBUG = True
 
 # df_dup.is_duplicated()
 # df_dup.is_unique()
@@ -7,14 +13,18 @@ import polars as pl
 def hanlder(e={}):
 
   # 移行定義情報をロード
-  final_cols, final_key_cols, default_values, dfs, dfs_keys = read_definition()
+  final_cols, final_key_cols, default_values, datas = read_definition()
 
   # 元データを初期化
-  dfs = initialize_dfs(dfs, dfs_keys, final_key_cols)
-  print(f'dfs: {dfs}')
-  
+  datas = initialize_dfs(datas, final_key_cols)
+  print(f'datas: {datas}')
+
+  # 元データをチェック
+  errors = check_dfs(datas)
+  print(f'errors: {errors}')
+
   # 元データを順にマージ
-  merged_df = merge_dfs(dfs, final_key_cols, final_cols)
+  merged_df = merge_dfs(datas, final_key_cols, final_cols)
 
   # デフォルト値の設定
   result_df = set_default_values(merged_df, default_values)
@@ -43,6 +53,14 @@ def read_definition():
     'age': 99,
     'birth': '1990/1/1',
   }
+  moto1_name = 'moto1'
+  moto1_def = [
+    { "name": "ID1", "type": "int", "is_key": True },
+    { "name": "ID2", "type": "int", "is_key": True },
+    { "name": "name", "type": "str" },
+    { "name": "age", "type": "int" },
+    { "name": "birth", "type": "datetime" },
+  ]
   moto1 = pl.DataFrame({
     'ID1': [1, 2, 3, 4],
     'ID2': [11, 22, 33, 44],
@@ -50,45 +68,64 @@ def read_definition():
     'age': [10, 20, 30, None],
     'birth': ['1986/12/17', None, '2025/1/17', None],
   })
-  moto1_key_cols = ['ID1', 'ID2']
+  moto2_name = 'moto2'
+  moto2_def = [
+    { "name": "ID__1", "type": "int", "is_key": True },
+    { "name": "ID__2", "type": "int", "is_key": True },
+    { "name": "name", "type": "str" },
+    { "name": "lucky_color", "type": "str" },
+  ]
   moto2 = pl.DataFrame({
     'ID__1': [1, 3, 5, 2, 4],
     'ID__2': [11, 23, 55, 22, 44],
     'name': ['AAA', 'CCC', 'EEE', None, ''],
     'lucky_color': ['red', 'yellow', 'blue', None, None]
   })
-  moto2_key_cols = ['ID__1', 'ID__2']
 
   return (
     final_cols,
     final_key_cols,
     default_values,
-    [moto1, moto2],
-    [moto1_key_cols, moto2_key_cols]
+    [{
+       "data_name": moto1_name,
+       "field_def": moto1_def,
+       "data": moto1
+    },{
+       "data_name": moto2_name,
+       "field_def": moto2_def,
+       "data": moto2
+    }],
   )
 
-def initialize_dfs(dfs, dfs_keys, final_key_cols):
-  # 全データをstrにキャスト
-  dfs = [cast_to_str(df) for df in dfs]
+def initialize_dfs(datas, final_key_cols):
   
   # マージ用にキーの名前を統一する
-  result_dfs = []
   # dfごとにループ
-  for idx_df, df in enumerate(dfs):
+  for idx, d in enumerate(datas):
+    # 全データをstrにキャスト
+    df = cast_to_str(d["data"])
+    # キー項目を取得
+    df_keys = get_dfs_key(d)
     query = []
     # カラムごとにループ
-    for idx_col, col in enumerate(df.columns):
+    new_field_def = []
+    for idx_col, col in enumerate(d["field_def"]):
+      old_key = col["name"]
       # カラムが該当dfのキーの場合、最終出力時のカラム名に訂正
-      if col in dfs_keys[idx_df]:
-        query.append(pl.col(col).alias(final_key_cols[idx_col]))
+      if col.get('is_key'):
+        final_key_col = final_key_cols[idx_col]
+        col["name"] = final_key_col
+        query.append(pl.col(old_key).alias(final_key_col))
       else:
-        query.append(pl.col(col))
+        query.append(pl.col(old_key))
+
+      new_field_def.append(col)
     
     # カラム名変更後のdfを返却値に追加
     print(f'query: {query}')
-    result_dfs.append(df.select(query))
+    datas[idx]["data"] = df.select(query)
 
-  return result_dfs
+  return datas
 
 def cast_to_str(df):
   return df.with_columns(
@@ -96,14 +133,64 @@ def cast_to_str(df):
     [pl.col(col).cast(pl.Utf8).alias(col) for col in df.columns]
   )
 
-def merge_dfs(dfs, final_key_cols, final_cols):
+def get_dfs_key(data):
+  dfs_key = []
+  field_def = data['field_def']
+  debug_print(f'field_def: {field_def}')
+  for field in field_def:
+      if field.get('is_key'):
+        dfs_key.append(field['name'])
+  
+  return dfs_key
+
+def check_dfs(datas):
+  errors = []
+
+  for d in datas:
+    model = create_dynamic_model(d["data_name"], d["field_def"])
+    errors = errors + check_data(d["data"], model)
+  
+  return errors
+
+def create_dynamic_model(name, migration_definition):
+    mname = f'{name}Model'  # XXX_MasterModel
+    fields = {}
+
+    for md in migration_definition:
+        fields[md['name']] = (md['type'], ...)
+
+    return create_model(
+        mname,
+        **fields
+    )
+
+def check_data(df, model):
+  errors = []
+  with time_log(f"{len(df)}件のチェック処理"):
+      rows = df.to_dicts()
+      for target in rows:
+          try:
+              record = model(**target)
+              debug_print(record.model_dump())
+
+          except ValidationError as e:
+              errors.append({
+                 "data": target,
+                 "error": e.errors()
+              })
+
+  return errors
+
+def merge_dfs(datas, final_key_cols, final_cols):
+
   # 両方のキーをマージし、キーのみのdfを作成
-  key_only_df = pl.concat([df[final_key_cols] for df in dfs]).unique().sort(by=final_key_cols)
+  key_only_df = pl.concat([d["data"][final_key_cols] for d in datas]).unique().sort(by=final_key_cols)
   print(f'key: {key_only_df}')
 
   # 元データのdfを順番にマージ
   prev_df = key_only_df
-  for next_df in dfs:
+  for d in datas:
+    next_df = d["data"]
     # マージ用のクエリを生成
     merge_query = create_merge_query(
       prev_df.columns,
@@ -169,8 +256,25 @@ def set_default_values(df, default_values):
 
   return df.select(query)
 
+
+@contextmanager
+def time_log(msg:str):
+    """ with time_log("処理A"):
+            proc_A()
+    """
+    print(f"{msg} - 開始")
+    st_tm:float = time.time()
+    yield
+    ed_tm:float = time.time()
+    print(f"{msg} - 終了:所要時間 {ed_tm-st_tm:.3f} [秒]")
+
+def debug_print(data):
+    if DEBUG:
+        print(data)
+
 def is_null_or_blank(column):
   return (pl.col(column).is_null()) | (pl.col(column) == '')
+
 
 if __name__ == '__main__':
     hanlder()
