@@ -74,8 +74,8 @@ def read_definition():
   }
   moto1_name = 'moto1'
   moto1_def = [
-    { "name": "ID1", "type": "int", "is_key": True },
-    { "name": "ID2", "type": "int", "is_key": True },
+    { "name": "ID1", "type": "int", "key_order": 0 },
+    { "name": "ID2", "type": "int", "key_order": 1 },
     { "name": "name", "type": "str" },
     { "name": "age", "type": "int" },
     { "name": "birth", "type": "datetime" },
@@ -285,8 +285,8 @@ def read_definition():
   })
   moto2_name = 'moto2'
   moto2_def = [
-    { "name": "ID__1", "type": "int", "is_key": True },
-    { "name": "ID__2", "type": "int", "is_key": True },
+    { "name": "ID__1", "type": "int", "key_order": 1 },
+    { "name": "ID__2", "type": "int", "key_order": 0 },
     { "name": "name", "type": "str" },
     { "name": "lucky_color", "type": "str" },
     { "name": "col1", "type": "str" },
@@ -487,8 +487,8 @@ def read_definition():
     # { 'name': 'col196', 'type': 'str' },
   ]
   moto2 = pl.DataFrame({
-    'ID__1': [1, 3, 5, 2, 4],
-    'ID__2': [11, 23, 55, 22, 44],
+    'ID__2': [1, 3, 5, 2, 4],
+    'ID__1': [11, 23, 55, 22, 44],
     'name': ['AAA', 'CCC', 'EEE', None, ''],
     'lucky_color': ['red', 'yellow', 'blue', None, None]
   })
@@ -544,16 +544,16 @@ def initialize_dfs(datas, final_key_cols):
   for idx, d in enumerate(datas):
     # 全データをstrにキャスト
     df = cast_to_str(d["data"])
-    # キー項目を取得
-    df_keys = get_dfs_key(d)
+
     query = []
-    # カラムごとにループ
     new_field_def = []
-    for idx_col, col in enumerate(d["field_def"]):
+    # カラムごとにループ
+    for col in d["field_def"]:
       old_key = col["name"]
-      # カラムが該当dfのキーの場合、最終出力時のカラム名に訂正
-      if col.get('is_key'):
-        final_key_col = final_key_cols[idx_col]
+      # カラムがキー項目の場合、最終出力時のカラム名に訂正
+      key_order = col.get('key_order')
+      if key_order is not None:
+        final_key_col = final_key_cols[key_order]
         col["name"] = final_key_col
         query.append(pl.col(old_key).alias(final_key_col))
       else:
@@ -578,8 +578,9 @@ def get_dfs_key(data):
   field_def = data['field_def']
   debug_print(f'field_def: {field_def}')
   for field in field_def:
-      if field.get('is_key'):
-        dfs_key.append(field['name'])
+      key_order = field.get('key_order')
+      if key_order:
+        dfs_key[key_order] = field['name']
   
   return dfs_key
 
