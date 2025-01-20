@@ -20,8 +20,8 @@ def hanlder(e={}):
   # print(f'datas: {datas}')
 
   # 元データをチェック
-  errors = check_dfs(datas)
-  # print(f'errors: {errors}')
+  errors = check_dfs(datas, final_key_cols)
+  print(f'errors: {errors}')
 
   # 元データを順にマージ
   merged_df = merge_dfs(datas, final_key_cols, final_cols)
@@ -47,9 +47,9 @@ def read_definition():
 
   final_cols = [
     'HOGE', 'ID_1', 'ID_2', 'other', 'name', 'age', 'birth', 'lucky_color',
-    "col1", "col2", "col3", "col4", "col5", "col6", "col7", "col8", "col9", "col10",
-    "col11","col12","col13","col14","col15","col16",
-    'col17','col18','col19','col20','col21','col22','col23','col24','col25',
+    # "col1", "col2", "col3", "col4", "col5", "col6", "col7", "col8", "col9", "col10",
+    # "col11","col12","col13","col14","col15","col16",
+    # 'col17','col18','col19','col20','col21','col22','col23','col24','col25',
     # 'col26','col27','col28','col29','col30',
     # 'col31','col32','col33','col34','col35','col36','col37','col38','col39','col40','col41','col42','col43','col44',
     # 'col45','col46','col47','col48','col49','col50','col51','col52','col53','col54','col55','col56','col57','col58',
@@ -79,31 +79,31 @@ def read_definition():
     { "name": "name", "type": "str" },
     { "name": "age", "type": "int" },
     { "name": "birth", "type": "datetime" },
-    { "name": "col1", "type": "str" },
-    { "name": "col2", "type": "str" },
-    { "name": "col3", "type": "str" },
-    { "name": "col4", "type": "str" },
-    { "name": "col5", "type": "str" },
-    { "name": "col6", "type": "str" },
-    { "name": "col7", "type": "str" },
-    { "name": "col8", "type": "str" },
-    { "name": "col9", "type": "str" },
-    { "name": "col10", "type": "str" },
-    { "name": "col11", "type": "str" },
-    { "name": "col12", "type": "str" },
-    { "name": "col13", "type": "str" },
-    { "name": "col14", "type": "str" },
-    { "name": "col15", "type": "str" },
-    { "name": "col16", "type": "str" },
-    { 'name': 'col17', 'type': 'str' },
-    { 'name': 'col18', 'type': 'str' },
-    { 'name': 'col19', 'type': 'str' },
-    { 'name': 'col20', 'type': 'str' },
-    { 'name': 'col21', 'type': 'str' },
-    { 'name': 'col22', 'type': 'str' },
-    { 'name': 'col23', 'type': 'str' },
-    { 'name': 'col24', 'type': 'str' },
-    { 'name': 'col25', 'type': 'str' },
+    # { "name": "col1", "type": "str" },
+    # { "name": "col2", "type": "str" },
+    # { "name": "col3", "type": "str" },
+    # { "name": "col4", "type": "str" },
+    # { "name": "col5", "type": "str" },
+    # { "name": "col6", "type": "str" },
+    # { "name": "col7", "type": "str" },
+    # { "name": "col8", "type": "str" },
+    # { "name": "col9", "type": "str" },
+    # { "name": "col10", "type": "str" },
+    # { "name": "col11", "type": "str" },
+    # { "name": "col12", "type": "str" },
+    # { "name": "col13", "type": "str" },
+    # { "name": "col14", "type": "str" },
+    # { "name": "col15", "type": "str" },
+    # { "name": "col16", "type": "str" },
+    # { 'name': 'col17', 'type': 'str' },
+    # { 'name': 'col18', 'type': 'str' },
+    # { 'name': 'col19', 'type': 'str' },
+    # { 'name': 'col20', 'type': 'str' },
+    # { 'name': 'col21', 'type': 'str' },
+    # { 'name': 'col22', 'type': 'str' },
+    # { 'name': 'col23', 'type': 'str' },
+    # { 'name': 'col24', 'type': 'str' },
+    # { 'name': 'col25', 'type': 'str' },
     # { 'name': 'col26', 'type': 'str' },
     # { 'name': 'col27', 'type': 'str' },
     # { 'name': 'col28', 'type': 'str' },
@@ -277,11 +277,11 @@ def read_definition():
     # { 'name': 'col196', 'type': 'str' },
   ]
   moto1 = pl.DataFrame({
-    'ID1': [1, 2, 3, 4],
-    'ID2': [11, 22, 33, 44],
-    'name': ['A', 'B', 'C', 'D'],
-    'age': [10, 20, 30, None],
-    'birth': ['1986/12/17', None, '2025/1/17', None],
+    'ID1': [1, 2, 3, 4, 2],
+    'ID2': [11, 22, 33, 44, 22],
+    'name': ['A', 'B', 'C', 'D', 'E'],
+    'age': [10, 20, 30, None, 44],
+    'birth': ['1986/12/17', None, '2025/1/17', None, '2025/01/21'],
   })
   moto2_name = 'moto2'
   moto2_def = [
@@ -289,31 +289,31 @@ def read_definition():
     { "name": "ID__2", "type": "int", "key_order": 0 },
     { "name": "name", "type": "str" },
     { "name": "lucky_color", "type": "str" },
-    { "name": "col1", "type": "str" },
-    { "name": "col2", "type": "str" },
-    { "name": "col3", "type": "str" },
-    { "name": "col4", "type": "str" },
-    { "name": "col5", "type": "str" },
-    { "name": "col6", "type": "str" },
-    { "name": "col7", "type": "str" },
-    { "name": "col8", "type": "str" },
-    { "name": "col9", "type": "str" },
-    { "name": "col10", "type": "str" },
-    { "name": "col11", "type": "str" },
-    { "name": "col12", "type": "str" },
-    { "name": "col13", "type": "str" },
-    { "name": "col14", "type": "str" },
-    { "name": "col15", "type": "str" },
-    { 'name': 'col16', 'type': 'str' },
-    { 'name': 'col17', 'type': 'str' },
-    { 'name': 'col18', 'type': 'str' },
-    { 'name': 'col19', 'type': 'str' },
-    { 'name': 'col20', 'type': 'str' },
-    { 'name': 'col21', 'type': 'str' },
-    { 'name': 'col22', 'type': 'str' },
-    { 'name': 'col23', 'type': 'str' },
-    { 'name': 'col24', 'type': 'str' },
-    { 'name': 'col25', 'type': 'str' },
+    # { "name": "col1", "type": "str" },
+    # { "name": "col2", "type": "str" },
+    # { "name": "col3", "type": "str" },
+    # { "name": "col4", "type": "str" },
+    # { "name": "col5", "type": "str" },
+    # { "name": "col6", "type": "str" },
+    # { "name": "col7", "type": "str" },
+    # { "name": "col8", "type": "str" },
+    # { "name": "col9", "type": "str" },
+    # { "name": "col10", "type": "str" },
+    # { "name": "col11", "type": "str" },
+    # { "name": "col12", "type": "str" },
+    # { "name": "col13", "type": "str" },
+    # { "name": "col14", "type": "str" },
+    # { "name": "col15", "type": "str" },
+    # { 'name': 'col16', 'type': 'str' },
+    # { 'name': 'col17', 'type': 'str' },
+    # { 'name': 'col18', 'type': 'str' },
+    # { 'name': 'col19', 'type': 'str' },
+    # { 'name': 'col20', 'type': 'str' },
+    # { 'name': 'col21', 'type': 'str' },
+    # { 'name': 'col22', 'type': 'str' },
+    # { 'name': 'col23', 'type': 'str' },
+    # { 'name': 'col24', 'type': 'str' },
+    # { 'name': 'col25', 'type': 'str' },
     # { 'name': 'col26', 'type': 'str' },
     # { 'name': 'col27', 'type': 'str' },
     # { 'name': 'col28', 'type': 'str' },
@@ -487,41 +487,41 @@ def read_definition():
     # { 'name': 'col196', 'type': 'str' },
   ]
   moto2 = pl.DataFrame({
-    'ID__2': [1, 3, 5, 2, 4],
-    'ID__1': [11, 23, 55, 22, 44],
-    'name': ['AAA', 'CCC', 'EEE', None, ''],
-    'lucky_color': ['red', 'yellow', 'blue', None, None]
+    'ID__2': [1, 3, 5, 2, 4, 3],
+    'ID__1': [11, 23, 55, 22, 44, 23],
+    'name': ['AAA', 'CCC', 'EEE', None, '', 'FFF'],
+    'lucky_color': ['red', 'yellow', 'blue', None, None, 'dark_gray']
   })
-  # 行の倍数
-  repeat_row_count = 20000
-  repeat_column_count = 25
-  # moto1の列を増やす
-  new_columns = [
-     pl.col(col) for col in moto1.columns
-  ] + [
-     pl.lit(i).alias(f'col{i}') for i in range(repeat_column_count + 1)
-  ]
-  moto1 = moto1.select(new_columns)
-  # moto1の行を増やす
-  moto1 = pl.concat([moto1] * (repeat_row_count - 1))
-  moto1 = moto1.with_columns(
-     (pl.arange(1, moto1.shape[0] + 1)).alias('ID1'),
-     (pl.arange(1, moto1.shape[0] + 1)).alias('ID2')
-  )
+  # # 行の倍数
+  # repeat_row_count = 2
+  # repeat_column_count = 25
+  # # moto1の列を増やす
+  # new_columns = [
+  #    pl.col(col) for col in moto1.columns
+  # ] + [
+  #    pl.lit(i).alias(f'col{i}') for i in range(repeat_column_count + 1)
+  # ]
+  # moto1 = moto1.select(new_columns)
+  # # moto1の行を増やす
+  # moto1 = pl.concat([moto1] * (repeat_row_count - 1))
+  # moto1 = moto1.with_columns(
+  #    (pl.arange(1, moto1.shape[0] + 1)).alias('ID1'),
+  #    (pl.arange(1, moto1.shape[0] + 1)).alias('ID2')
+  # )
 
-  # moto2の列を増やす
-  new_columns = [
-     pl.col(col) for col in moto2.columns
-  ] + [
-     pl.lit(i).alias(f'col{i}') for i in range(repeat_column_count + 1)
-  ]
-  moto2 = moto2.select(new_columns)
-  # moto2の行を増やす
-  moto2 = pl.concat([moto2] * (repeat_row_count - 1))
-  moto2 = moto2.with_columns(
-     (pl.arange(1, moto2.shape[0] + 1)).alias('ID__1'),
-     (pl.arange(1, moto2.shape[0] + 1)).alias('ID__2')
-  )
+  # # moto2の列を増やす
+  # new_columns = [
+  #    pl.col(col) for col in moto2.columns
+  # ] + [
+  #    pl.lit(i).alias(f'col{i}') for i in range(repeat_column_count + 1)
+  # ]
+  # moto2 = moto2.select(new_columns)
+  # # moto2の行を増やす
+  # moto2 = pl.concat([moto2] * (repeat_row_count - 1))
+  # moto2 = moto2.with_columns(
+  #    (pl.arange(1, moto2.shape[0] + 1)).alias('ID__1'),
+  #    (pl.arange(1, moto2.shape[0] + 1)).alias('ID__2')
+  # )
   return (
     final_cols,
     final_key_cols,
@@ -573,23 +573,18 @@ def cast_to_str(df):
     [pl.col(col).cast(pl.Utf8).alias(col) for col in df.columns]
   )
 
-def get_dfs_key(data):
-  dfs_key = []
-  field_def = data['field_def']
-  debug_print(f'field_def: {field_def}')
-  for field in field_def:
-      key_order = field.get('key_order')
-      if key_order:
-        dfs_key[key_order] = field['name']
-  
-  return dfs_key
-
-def check_dfs(datas):
+def check_dfs(datas, key_cols):
   errors = []
 
   for d in datas:
+    df = d["data"]
+
+    # キー重複チェック
+    errors += check_data_duplicate(df, key_cols)
+
+    # 型チェック
     model = create_dynamic_model(d["data_name"], d["field_def"])
-    errors = errors + check_data(d["data"], model)
+    errors += check_data_definition(df, model)
   
   return errors
 
@@ -598,22 +593,33 @@ def create_dynamic_model(name, migration_definition):
     fields = {}
 
     for md in migration_definition:
-        fields[md['name']] = (md['type'], ...)
+        fields[md['name']] = (md['type'], None)
 
     return create_model(
         mname,
         **fields
     )
 
-def check_data(df, model):
+def check_data_duplicate(df, key_cols):
+    # キー項目で重複しているデータを取得
+    duplicates = df.filter(pl.struct(key_cols).is_duplicated())
+    # エラーオブジェクトに格納して返却
+    errors = [
+      {
+         'data': dup,
+         'error': f'key is duplicated: {key_cols}'
+      } for dup in duplicates.to_dicts()
+    ]
+
+    return errors
+
+def check_data_definition(df, model):
   errors = []
   with time_log(f"{len(df)}件のチェック処理"):
       rows = df.to_dicts()
       for target in rows:
           try:
-              record = model(**target)
-              # debug_print(record.model_dump())
-
+              model(**target)
           except ValidationError as e:
               errors.append({
                  "data": target,
