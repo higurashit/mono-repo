@@ -1,5 +1,5 @@
 import polars as pl
-from pydantic import create_model, ValidationError
+from pydantic import Field, create_model, ValidationError
 from openpyxl import Workbook
 from contextlib import contextmanager
 from datetime import datetime
@@ -25,10 +25,10 @@ def hanlder(e={}):
   print(f'errors: {errors}')
 
   # 元データを順にマージ
-  merged_df = merge_dfs(srcs, dst["key_cols"], dst["cols"])
+  merged_df = merge_dfs(srcs, dst["key_cols"], dst["field_def"])
 
   # デフォルト値の設定
-  result_df = set_default_values(merged_df, dst["default_values"])
+  result_df = set_default_values(merged_df, dst["field_def"])
   print(f'result df: {result_df}')
 
   # 結果を出力
@@ -52,25 +52,35 @@ def read_definition():
      data_rows[f'column_{i+1}'] for i in range(final_cols_num)
   ])
   final_definition.columns = [xlsx[f'column_{i+1}'][data_row_num-1] for i in range(final_cols_num)]
-  print(f'final_definition: {final_definition}')
 
   # 最終形のカラム名
-  final_cols = final_definition["論理名"].to_list()
-  print(final_cols)
-
-  # 業務キー
+  field_def = []
   final_key_cols = []
-  for i, x in enumerate(final_definition["業務キー"]):
-    if x == '〇':
-      final_key_cols.append(final_cols[i])
-  print(final_key_cols)
+  key_order = 0
+  for i, x in enumerate(final_definition["論理名"].to_list()):
+    field = {
+      "name": x,
+      "type": final_definition["型"][i],
+      "max_length": final_definition["桁数"][i],
+      "null_ng": True if final_definition["NULL"][i] == "NG" else False,
+      "default": final_definition["初期値"][i],
+    }
+    if final_definition["業務キー"][i] == '〇':
+      field["key_order"] = key_order
+      final_key_cols.append(x)
+      key_order += 1
+    if final_definition["許容区分値"][i] != '' and final_definition["許容区分値"][i] != '-':
+      field["enum"] = final_definition["許容区分値"][i].split(',')
+    
+    field_def.append(field)
 
-  # 初期値
-  default_values = {}
-  for i, x in enumerate(final_definition["初期値"]):
-    if x != '':
-      default_values[final_cols[i]] = x
-  print(default_values)
+  dst_definitions = {
+    "definition": final_definition,
+    "key_cols": final_key_cols,
+    "field_def": field_def,
+    "output_path": f'{sheet_name}.xlsx',
+  }
+  print(f'dst_definitions: {dst_definitions}')
 
   # 元データを取り出し
   # 元データの数
@@ -103,11 +113,13 @@ def read_definition():
     key_cols = []
     key_order = 0
     for i, x in enumerate(definition["論理名"]):
+      # print(f'i: {i}, x: {x}')
       if x != '' and x != '-':
         d = {
           "name": x,
-          "final_name": final_cols[i],
+          "final_name": dst_definitions["field_def"][i]["name"],
           "type": definition["型"][i],
+          "max_length": definition["桁"][i],
           "null_ng": True if definition["NULL"][i] == "NG" else False,
         }
         if definition["結合キー"][i] == '〇':
@@ -135,13 +147,6 @@ def read_definition():
     src_definitions.append(src_definition)
   
   # print(src_definitions)
-  dst_definitions = {
-    "definition": final_definition,
-    "cols": final_cols,
-    "key_cols": final_key_cols,
-    "default_values": default_values,
-    "output_path": f'{sheet_name}.xlsx',
-  }
 
   return (
     dst_definitions,
@@ -191,8 +196,12 @@ def create_dynamic_model(name, migration_definition):
     fields = {}
 
     for md in migration_definition:
-        default_value = ... if md.get('null_ng') else None
-        fields[md['name']] = (md['type'], default_value)
+        field_params = {
+          'default': ... if md.get('null_ng') else None,
+          # 'max_length': 
+        }
+        
+        fields[md['name']] = (md['type'], Field(**field_params))
 
     return create_model(
         mname,
@@ -223,19 +232,28 @@ def check_data_definition(df, model):
 
   errors = []
   with time_log(f"{len(df)}件のチェック処理"):
-      rows = df.to_dicts()
-      for target in rows:
-          try:
-              model(**target)
-          except ValidationError as e:
-              errors.append({
-                 "data": target,
-                 "error": e.errors()
-              })
+    errors += check_with_model(df, model)
+    # errors += check
+          
+              
 
   return errors
 
-def merge_dfs(datas, final_key_cols, final_cols):
+def  check_with_model(df, model):
+  errors = []
+  for row in df.to_dicts():
+    try:
+      # pydanticモデルでのチェック
+      model(**row)
+    except ValidationError as e:
+      # エラーの場合はメッセージを設定
+      errors.append({
+          "data": row,
+          "error": e.errors()
+      })
+  return errors
+
+def merge_dfs(datas, final_key_cols, final_field_def):
 
   # カラム名を最終形に統一
   for i, d in enumerate(datas):
@@ -245,9 +263,11 @@ def merge_dfs(datas, final_key_cols, final_cols):
     ])
     datas[i]["data"] = df
   
-  print(f'datas: {datas}')
-  print(f'final_key_cols: {final_key_cols}')
-  print(f'final_cols: {final_cols}')
+  final_cols = [f["name"] for f in final_field_def]
+  
+  # print(f'datas: {datas}')
+  # print(f'final_key_cols: {final_key_cols}')
+  # print(f'final_cols: {final_cols}')
 
   # 両方のキーをマージし、キーのみのdfを作成
   key_only_df = pl.concat([d["data"][final_key_cols] for d in datas]).unique().sort(by=final_key_cols)
@@ -267,10 +287,10 @@ def merge_dfs(datas, final_key_cols, final_cols):
         final_key_cols,
         final_cols,
       )
-      print(f'merge query: {merge_query}')
+      # print(f'merge query: {merge_query}')
       # マージの実行
       prev_df = prev_df.join(next_df, on=final_key_cols, how='left').select(merge_query)
-      print(f'merged df: {prev_df}')
+      # print(f'merged df: {prev_df}')
   return prev_df
 
 def create_merge_query(prev_cols, next_cols, final_key_cols, final_cols):
@@ -306,15 +326,27 @@ def create_merge_query(prev_cols, next_cols, final_key_cols, final_cols):
   
   return query
 
-def set_default_values(df, default_values):
+def set_default_values(df, final_field_def):
+  default_values = {f["name"]: f["default"] for f in final_field_def}
   query = []
   for col in df.columns:
-    # 初期値設定がある場合は、Null, 空文字を初期値で上書き
+    # 初期値設定がある場合
     if col in default_values:
-      default_value = default_values.get(col)
+      val = default_values.get(col)
+      # 動的な初期値
+      if val == '連番':
+        default_value = pl.arange(1, df.height + 1)
+      elif val == '現在日':
+        today = datetime.today().strftime('%Y-%m-%d 00:00:00')
+        default_value = pl.lit(today)
+      # 静的な初期値
+      else:
+        default_value = pl.lit(val)
+      
+      # Null or 空文字の場合、初期値で上書きする
       query.append(
         pl.when(is_null_or_blank(col))
-        .then(pl.lit(default_value))
+        .then(default_value)
         .otherwise(pl.col(col))
         .alias(col)
       )
@@ -327,7 +359,7 @@ def set_default_values(df, default_values):
 def output_excel(df:pl.DataFrame, dst):
   file_path = dst["output_path"]
   definition = dst["definition"]
-  cols = dst["cols"]
+  cols = [f["name"] for f in dst["field_def"]]
 
   # Create a new workbook
   wb = Workbook()
