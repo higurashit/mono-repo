@@ -1,6 +1,7 @@
 import polars as pl
 from pydantic import Field, create_model, ValidationError
 from openpyxl import Workbook
+from decimal import Decimal
 from contextlib import contextmanager
 from datetime import datetime
 import time
@@ -110,33 +111,29 @@ def read_definition():
     definition.columns = [xlsx[f'column_{i+1}'][data_row_num-1] for i in range(start_col_num, end_col_num)]
     
     field_def = []
-    key_cols = []
-    key_order = 0
     for i, x in enumerate(definition["論理名"]):
       # print(f'i: {i}, x: {x}')
       if x != '' and x != '-':
-        d = {
+        f = {
           "name": x,
           "final_name": dst_definitions["field_def"][i]["name"],
-          "type": definition["型"][i],
-          "max_length": definition["桁"][i],
-          "null_ng": True if definition["NULL"][i] == "NG" else False,
         }
-        if definition["結合キー"][i] == '〇':
-          d["key_order"] = key_order
-          key_cols.append((key_order, x))
-          key_order += 1
-        if definition["許容区分値"][i] != '' and definition["許容区分値"][i] != '-':
-          d["enum"] = definition["許容区分値"][i].split(',')
+        f = add_field_definition(f, definition[i])
+        field_def.append(f)
 
-        field_def.append(d)
-
+    key_cols = []
+    key_order = 0
+    for f in field_def:
+      if f["is_key"]:
+        key_cols.append((key_order, f["name"]))
+        key_order += 1
+        
     # print(f'field_def: {field_def}')
     # データ取得
     file_path = xlsx[f'column_{start_col_num + 1}'][4]
-    dtypes = {f["name"]: pl.Utf8 for f in field_def} # 0埋め数字の0が取れてしまうため、すべてUtf8にキャスト
+    schema_overrides = {f["name"]: pl.Utf8 for f in field_def} # 0埋め数字の0が取れてしまうため、すべてUtf8にキャスト
     # print(f'file_path: {file_path}, dtypes: {dtypes}')
-    src_df = pl.read_csv(file_path, dtypes=dtypes)
+    src_df = pl.read_csv(file_path, schema_overrides=schema_overrides)
     src_definition = {
       "definition": definition,
       "data_name": data_name,
@@ -152,6 +149,51 @@ def read_definition():
     dst_definitions,
     src_definitions,
   )
+
+def add_field_definition(field, definition):
+
+  # print(f'field: {field}, definition: {definition}')
+
+  defi = get_def_dict(definition)
+  # print(f'defi: {defi}')
+
+  # 型, 桁
+  if defi["型"] == 'varchar':
+    field["type"] = 'str'
+    if defi["桁"] != '' and defi["桁"] != '-':
+      field["max_length"] = int(defi["桁"])
+  elif defi["型"] == 'timestamp':
+    field["type"] = 'datetime'
+  elif defi["型"] == 'numeric':
+    field["type"] = 'int'
+    if defi["桁"] != '' and defi["桁"] != '-':
+      # 数値の場合、整数部分と小数部分を取得
+      [n, f] = defi["桁"].split(',')
+      # print(f'n: {n}, float: {float}')
+      # 小数部分が0の場合は整数
+      # 整数
+      if int(f) == 0:
+        field["lt"] = 10 ** int(n)
+      # 小数
+      if int(f) > 0:
+        field["type"] = Decimal
+        field["max_digits"] = int(n)
+        field["decimal_places"] = int(f)
+  # NULL NG
+  field["null_ng"] = True if defi["NULL"] == "NG" else False
+  # キー
+  field["is_key"] = True if defi["結合キー"] == "〇" else False
+  # 許容区分値
+  if defi["許容区分値"] != '' and defi["許容区分値"] != '-':
+    field["enum"] = defi["許容区分値"].split(',')
+  
+  # print(f'field: {field}')
+  return field
+
+def get_def_dict(defi):
+  return {
+    d: defi[d][0] for d in defi.columns
+  }
 
 def initialize_dfs(datas):
 
@@ -176,41 +218,21 @@ def check_dfs(datas):
   errors = []
 
   for d in datas:
-    df = d["data"]
-    key_cols = d["key_cols"]
-
     # キー重複チェック
-    errors += check_data_duplicate(df, key_cols)
+    errors += check_data_duplicate(d["data"], d["key_cols"])
 
     # 型チェック
     model = create_dynamic_model(d["data_name"], d["field_def"])
-    errors += check_data_definition(df, model)
-  
+    errors += check_data_definition(d["data"], model)
+
+    # 許容区分値チェック
+    errors += check_enum_data(d["data"], d["field_def"])
+
   return errors
-
-def create_dynamic_model(name, migration_definition):
-    
-    # print(f'migration_definition: {migration_definition}')
-
-    mname = f'{name}Model'  # XXX_MasterModel
-    fields = {}
-
-    for md in migration_definition:
-        field_params = {
-          'default': ... if md.get('null_ng') else None,
-          # 'max_length': 
-        }
-        
-        fields[md['name']] = (md['type'], Field(**field_params))
-
-    return create_model(
-        mname,
-        **fields
-    )
 
 def check_data_duplicate(df, key_cols):
     
-    print(f'key_cols: {key_cols}')
+    # print(f'key_cols: {key_cols}')
 
     keys = []
     for _, key in key_cols:
@@ -228,29 +250,70 @@ def check_data_duplicate(df, key_cols):
 
     return errors
 
+def create_dynamic_model(name, field_def):
+    
+    # print(f'field_def: {field_def}')
+
+    mname = f'{name}Model'  # XXX_MasterModel
+    fields = {}
+
+    for f in field_def:
+        # print(f'f: {f}')
+        field_params = {
+          'default': ... if f.get('null_ng') else None,
+          'max_length': f.get('max_length'),
+          'max_digits': f.get('max_digits'),
+          'decimal_places': f.get('decimal_places'),
+          'lt': f.get('lt'),
+        }
+        fields[f['name']] = (f['type'], Field(**field_params))
+
+    # print(f'fields: {fields}')
+
+    return create_model(
+        mname,
+        **fields
+    )
+
 def check_data_definition(df, model):
 
   errors = []
   with time_log(f"{len(df)}件のチェック処理"):
-    errors += check_with_model(df, model)
-    # errors += check
-          
-              
-
+    for row in df.to_dicts():
+      # print(f'row: {row}')
+      error = check_row_with_model(row, model)
+      if error:
+        errors.append(error)
+      
   return errors
 
-def  check_with_model(df, model):
+def check_row_with_model(row, model):
+  try:
+    # pydanticモデルでのチェック
+    model(**row)
+  except ValidationError as e:
+    # エラーの場合はメッセージを設定
+    return {
+      "data": row,
+      "error": e.errors()
+    }
+
+def check_enum_data(df, field_def):
+
   errors = []
-  for row in df.to_dicts():
-    try:
-      # pydanticモデルでのチェック
-      model(**row)
-    except ValidationError as e:
-      # エラーの場合はメッセージを設定
-      errors.append({
-          "data": row,
-          "error": e.errors()
-      })
+  for f in field_def:
+    # 許容区分値を持つ列のみ実施
+    if f.get('enum'):
+      # 列データの取得
+      col_data = df[f.get('name')]
+      # 列データのチェック
+      for i, data in enumerate(col_data):
+        # 許容区分値に含まれていない場合
+        if data not in f.get('enum'):
+          errors.append({
+            "data": df[i].to_dicts(),
+            "error": f"enum error: {f.get('name')} に {data} が格納されています。"
+          })
   return errors
 
 def merge_dfs(datas, final_key_cols, final_field_def):
@@ -372,7 +435,7 @@ def output_excel(df:pl.DataFrame, dst):
 
   columuns = definition.columns
   sheets = definition.select(columuns[9:18])
-  print(sheets)
+  print(f'sheets: {sheets}')
   for sheet_name, sheet_row_nums in sheets.to_dict().items():
     row_nums_without_null = list(filter(lambda x: x != '' and x != '-', sheet_row_nums.to_list()))
     if len(row_nums_without_null) == 0:
@@ -385,14 +448,14 @@ def output_excel(df:pl.DataFrame, dst):
     is_output = False
     for idx, row_num in enumerate(sheet_row_nums.to_list()):
       # print(f'{idx}: {row_num}: {cols[idx]}')
+      # 数値が設定されている場合
       if row_num != '' and row_num != '-':
-        # 全体が5カラムで、2カラム目の要素が「3番目」だった場合、以下のようにしたい
-        # query: [pl.lit(None), pl.lit(None), 3番目のカラム, pl.lit(None), pl.lit(None)]
+        # 設定されている数値を列番号として、当該列を設定
         query[int(row_num) - 1] = pl.col(cols[idx])
         is_output = True
     if is_output:
       ws = wb.create_sheet(title=sheet_name)
-      print(f'query: {query}')
+      # print(f'query: {query}')
       ret_df = df.select(query)
       ws.append(ret_df.columns)
       for d in ret_df.to_dicts():
