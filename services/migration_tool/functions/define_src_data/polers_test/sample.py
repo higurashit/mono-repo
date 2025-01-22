@@ -14,28 +14,31 @@ DEBUG = True
 
 def hanlder(e={}):
 
-  # 移行定義情報をロード
-  dst, srcs = read_definition()
+  with time_log(f"[処理全体] 移行データの作成処理"):
+    with time_log(f"移行定義情報のファイル読み込み処理"):
+      dst, srcs = read_definition()
 
-  # 元データを初期化
-  srcs = initialize_dfs(srcs)
-  # print(f'datas: {datas}')
+    with time_log(f"元データの初期化処理"):
+      srcs = initialize_dfs(srcs)
+      # print(f'datas: {datas}')
 
-  # 元データをチェック
-  src_errors = check_dfs(srcs)
-  print(f'src_errors: {src_errors}')
+    with time_log(f"元データのチェック処理"):
+      src_errors = check_dfs(srcs)
+      print(f'src_errors: {src_errors}')
 
-  # 元データを順にマージ
-  merged_df = merge_dfs(srcs, dst["key_cols"], dst["field_def"])
+    with time_log(f"データのマージ処理"):
+      merged_df = merge_dfs(srcs, dst["key_cols"], dst["field_def"])
 
-  # デフォルト値の設定
-  result_df = set_default_values(merged_df, dst["field_def"])
-  print(f'result df: {result_df}')
-  dst_errors = check_df("result", result_df, dst["key_cols"], dst["field_def"])
-  print(f'dst_errors: {dst_errors}')
+    with time_log(f"結果データへの初期値設定処理"):
+      result_df = set_default_values(merged_df, dst["field_def"])
+      print(f'result df: {result_df}')
 
-  # 結果を出力
-  output_excel(result_df, dst)
+    with time_log(f"結果データのチェック処理"):
+      dst_errors = check_df("result", result_df, dst["key_cols"], dst["field_def"])
+      print(f'dst_errors: {dst_errors}')
+
+    with time_log(f"結果データのファイル出力処理"):
+      output_excel(result_df, dst)
 
 def read_definition():
   file_path = '移行定義FMT.xlsx'
