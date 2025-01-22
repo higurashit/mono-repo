@@ -22,8 +22,8 @@ def hanlder(e={}):
   # print(f'datas: {datas}')
 
   # 元データをチェック
-  errors = check_dfs(srcs)
-  print(f'errors: {errors}')
+  src_errors = check_dfs(srcs)
+  print(f'src_errors: {src_errors}')
 
   # 元データを順にマージ
   merged_df = merge_dfs(srcs, dst["key_cols"], dst["field_def"])
@@ -31,6 +31,8 @@ def hanlder(e={}):
   # デフォルト値の設定
   result_df = set_default_values(merged_df, dst["field_def"])
   print(f'result df: {result_df}')
+  dst_errors = check_df("result", result_df, dst["key_cols"], dst["field_def"])
+  print(f'dst_errors: {dst_errors}')
 
   # 結果を出力
   output_excel(result_df, dst)
@@ -39,7 +41,7 @@ def read_definition():
   file_path = '移行定義FMT.xlsx'
   sheet_name = '1_Aマスタ'
   xlsx = pl.read_excel(file_path, sheet_name=sheet_name, has_header=False)
-  print(f'xlsx: {xlsx}')
+  # print(f'xlsx: {xlsx}')
 
   # excel読み込み定義（行列が変わる場合はここを変更すること）
   data_row_num = 8 # 9行目以降がデータ行
@@ -56,24 +58,19 @@ def read_definition():
 
   # 最終形のカラム名
   field_def = []
-  final_key_cols = []
-  key_order = 0
   for i, x in enumerate(final_definition["論理名"].to_list()):
-    field = {
+    # print(f'i: {i}, x: {x}')
+    f = {
       "name": x,
-      "type": final_definition["型"][i],
-      "max_length": final_definition["桁数"][i],
-      "null_ng": True if final_definition["NULL"][i] == "NG" else False,
-      "default": final_definition["初期値"][i],
     }
-    if final_definition["業務キー"][i] == '〇':
-      field["key_order"] = key_order
-      final_key_cols.append(x)
-      key_order += 1
-    if final_definition["許容区分値"][i] != '' and final_definition["許容区分値"][i] != '-':
-      field["enum"] = final_definition["許容区分値"][i].split(',')
-    
-    field_def.append(field)
+    f = add_field_definition(f, final_definition[i])
+    field_def.append(f)
+
+  # 最終形のキー項目
+  final_key_cols = []
+  for f in field_def:
+    if f["is_key"]:
+      final_key_cols.append(f["name"])
 
   dst_definitions = {
     "definition": final_definition,
@@ -81,7 +78,7 @@ def read_definition():
     "field_def": field_def,
     "output_path": f'{sheet_name}.xlsx',
   }
-  print(f'dst_definitions: {dst_definitions}')
+  # print(f'dst_definitions: {dst_definitions}')
 
   # 元データを取り出し
   # 元データの数
@@ -90,7 +87,7 @@ def read_definition():
   # 列数が不正の場合はException
   if x != 0:
     print(f"元データの列数が不正です。xlsx.columns: {len(xlsx.columns)}, src_cols_num: {src_cols_num}, columns_per_src: {columns_per_src}, src_data_num: {src_data_num}, x: {x}")
-  print(src_data_num)
+  # print(src_data_num)
 
   # 元データの定義
   src_definitions = []
@@ -122,11 +119,9 @@ def read_definition():
         field_def.append(f)
 
     key_cols = []
-    key_order = 0
     for f in field_def:
       if f["is_key"]:
-        key_cols.append((key_order, f["name"]))
-        key_order += 1
+        key_cols.append(f["name"])
         
     # print(f'field_def: {field_def}')
     # データ取得
@@ -157,20 +152,23 @@ def add_field_definition(field, definition):
   defi = get_def_dict(definition)
   # print(f'defi: {defi}')
 
-  # 型, 桁
+  # 型, 桁数
   if defi["型"] == 'varchar':
-    field["type"] = 'str'
-    if defi["桁"] != '' and defi["桁"] != '-':
-      field["max_length"] = int(defi["桁"])
+    field["type"] = str
+    if defi["桁数"] != '' and defi["桁数"] != '-':
+      field["max_length"] = int(defi["桁数"])
   elif defi["型"] == 'timestamp':
-    field["type"] = 'datetime'
+    field["type"] = datetime
   elif defi["型"] == 'numeric':
-    field["type"] = 'int'
-    if defi["桁"] != '' and defi["桁"] != '-':
-      # 数値の場合、整数部分と小数部分を取得
-      [n, f] = defi["桁"].split(',')
+    field["type"] = int
+    if defi["桁数"] != '' and defi["桁数"] != '-':
+      # 整数部分をn, 小数部分をfで定義
+      n = defi["桁数"]
+      f = 0
+      # 小数を含む場合、整数部分と小数部分を取得
+      if ',' in defi["桁数"]:
+        [n, f] = defi["桁数"].split(',')
       # print(f'n: {n}, float: {float}')
-      # 小数部分が0の場合は整数
       # 整数
       if int(f) == 0:
         field["lt"] = 10 ** int(n)
@@ -182,10 +180,17 @@ def add_field_definition(field, definition):
   # NULL NG
   field["null_ng"] = True if defi["NULL"] == "NG" else False
   # キー
-  field["is_key"] = True if defi["結合キー"] == "〇" else False
+  field["is_key"] = True if defi["業務キー"] == "〇" else False
   # 許容区分値
-  if defi["許容区分値"] != '' and defi["許容区分値"] != '-':
+  if defi.get("許容区分値") and defi.get("許容区分値") != '-':
     field["enum"] = defi["許容区分値"].split(',')
+  # 初期値
+  if defi.get("初期値") and defi.get("初期値") != '-':
+    field["default"] = defi["初期値"]
+  else:
+    field["default"] = None
+    # 初期値がない場合は、型もNoneを許容する
+    field["type"] = field["type"] | None
   
   # print(f'field: {field}')
   return field
@@ -218,33 +223,36 @@ def check_dfs(datas):
   errors = []
 
   for d in datas:
-    # キー重複チェック
-    errors += check_data_duplicate(d["data"], d["key_cols"])
-
-    # 型チェック
-    model = create_dynamic_model(d["data_name"], d["field_def"])
-    errors += check_data_definition(d["data"], model)
-
-    # 許容区分値チェック
-    errors += check_enum_data(d["data"], d["field_def"])
+    errors = check_df(d["data_name"], d["data"], d["key_cols"], d["field_def"])
 
   return errors
+
+def check_df(name, df, key_cols, field_def):
+
+  with time_log(f"[{name}] {len(df)}件のチェック処理"):
+    errors = []
+    # キー重複チェック
+    errors += check_data_duplicate(df, key_cols)
+
+    # 型チェック
+    model = create_dynamic_model(name, field_def)
+    errors += check_data_definition(df, model)
+
+    # 許容区分値チェック
+    errors += check_enum_data(df, field_def)
+
+    return errors
 
 def check_data_duplicate(df, key_cols):
     
     # print(f'key_cols: {key_cols}')
-
-    keys = []
-    for _, key in key_cols:
-      keys.append(key)
-
     # キー項目で重複しているデータを取得
-    duplicates = df.filter(pl.struct(keys).is_duplicated())
+    duplicates = df.filter(pl.struct(key_cols).is_duplicated())
     # エラーオブジェクトに格納して返却
     errors = [
       {
          'data': dup,
-         'error': f'key is duplicated: {keys}'
+         'error': f'key is duplicated: {key_cols}'
       } for dup in duplicates.to_dicts()
     ]
 
@@ -278,12 +286,11 @@ def create_dynamic_model(name, field_def):
 def check_data_definition(df, model):
 
   errors = []
-  with time_log(f"{len(df)}件のチェック処理"):
-    for row in df.to_dicts():
-      # print(f'row: {row}')
-      error = check_row_with_model(row, model)
-      if error:
-        errors.append(error)
+  for row in df.to_dicts():
+    # print(f'row: {row}')
+    error = check_row_with_model(row, model)
+    if error:
+      errors.append(error)
       
   return errors
 
@@ -339,7 +346,7 @@ def merge_dfs(datas, final_key_cols, final_field_def):
   # 元データのdfを順番にマージ
   prev_df = key_only_df
   for d in datas:
-    with time_log(f"{len(d['data'])}件のマージ処理"):
+    with time_log(f"[{d['data_name']}] {len(d['data'])}件のマージ処理"):
       # カラム名を最終形に統一
       next_df = d["data"]
 
@@ -390,6 +397,9 @@ def create_merge_query(prev_cols, next_cols, final_key_cols, final_cols):
   return query
 
 def set_default_values(df, final_field_def):
+  
+  # print(f'final_field_def: {final_field_def}')
+
   default_values = {f["name"]: f["default"] for f in final_field_def}
   query = []
   for col in df.columns:
