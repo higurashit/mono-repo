@@ -16,135 +16,97 @@ def hanlder(e={}):
 
   with time_log(f"[処理全体] 移行データの作成処理"):
     with time_log(f"移行定義情報のファイル読み込み処理"):
-      dst, srcs = read_definition()
+      file_path = '移行定義FMT.xlsx'
+      xlsx_list:dict = read_excel(file_path)
+    
+    for key in xlsx_list:
+      dst, srcs = read_definition(key, xlsx_list[key])
 
-    with time_log(f"元データの初期化処理"):
-      srcs = initialize_dfs(srcs)
-      # print(f'datas: {datas}')
+      with time_log(f"元データの初期化処理"):
+        srcs = initialize_dfs(srcs)
+        # print(f'datas: {datas}')
 
-    with time_log(f"元データのチェック処理"):
-      src_errors = check_dfs(srcs)
-      print(f'src_errors: {src_errors}')
+      with time_log(f"元データのチェック処理"):
+        src_errors = check_dfs(srcs)
+        print(f'src_errors: {src_errors}')
 
-    with time_log(f"元データの加工処理"):
-      srcs = process_dfs(srcs, dst)
+      with time_log(f"元データの加工処理"):
+        srcs = process_dfs(srcs, dst)
 
-    with time_log(f"データのマージ処理"):
-      merged_df = merge_dfs(srcs, dst["key_cols"], dst["field_def"])
+      with time_log(f"データのマージ処理"):
+        merged_df = merge_dfs(srcs, dst["key_cols"], dst["field_def"])
 
-    with time_log(f"結果データへの初期値設定処理"):
-      result_df = set_default_values(merged_df, dst["field_def"])
-      print(f'result df: {result_df}')
+      with time_log(f"結果データへの初期値設定処理"):
+        result_df = set_default_values(merged_df, dst["field_def"])
+        print(f'result df: {result_df}')
 
-    with time_log(f"結果データのチェック処理"):
-      dst_errors = check_df("result", result_df, dst["key_cols"], dst["field_def"])
-      print(f'dst_errors: {dst_errors}')
+      with time_log(f"結果データのチェック処理"):
+        dst_errors = check_df("result", result_df, dst["key_cols"], dst["field_def"])
+        print(f'dst_errors: {dst_errors}')
 
-    with time_log(f"結果データのファイル出力処理"):
-      output_excel(result_df, dst)
+      with time_log(f"結果データのファイル出力処理"):
+        output_excel(result_df, dst)
 
-def read_definition():
-  file_path = '移行定義FMT.xlsx'
-  sheet_name = '1_Aマスタ'
-  xlsx = pl.read_excel(file_path, sheet_name=sheet_name, has_header=False)
-  # print(f'xlsx: {xlsx}')
+def read_excel(file_path: str):
+  # 全シート読み込み
+  xlsx_list:dict = pl.read_excel(file_path, sheet_id=0, has_header=False)
+  # 一覧シート削除
+  xlsx_list.pop('一覧')
+  # print(f'xlsx_list: {xlsx_list}')
+  return xlsx_list
 
+def read_definition(data_name, xlsx):
+
+  print(f'xlsx: {xlsx}')
+  
   # excel読み込み定義（行列が変わる場合はここを変更すること）
-  data_row_num = 8 # 9行目以降がデータ行
-  final_cols_num = 19 # 19列目までが最終形の定義
-  columns_per_src = 7
+  config = {
+    "data_name": data_name,
+    "row": {
+      "file_path": 4,
+      "data": 8 # 9行目以降がデータ行
+    },
+    "column": {
+      "dst": 19 # 19列目までが最終形の定義
+    },
+    "final_cols_num": 19, 
+    "columns_per_src": 7,
+    
+  }
 
   # データ行を取り出し
-  data_rows = xlsx[data_row_num:]
+  data_rows = xlsx[config["row"]["data"]:]
   # 1列目までが最終形の定義
   final_definition = data_rows.select([
-     data_rows[f'column_{i+1}'] for i in range(final_cols_num)
+     data_rows[f'column_{i+1}'] for i in range(config["column"]["dst"])
   ])
-  final_definition.columns = [xlsx[f'column_{i+1}'][data_row_num-1] for i in range(final_cols_num)]
-
-  # 最終形のカラム名
-  field_def = []
-  for i, x in enumerate(final_definition["論理名"].to_list()):
-    # print(f'i: {i}, x: {x}')
-    f = {
-      "name": x,
-    }
-    f = add_field_definition(f, final_definition[i])
-    field_def.append(f)
-
-  # 最終形のキー項目
-  final_key_cols = []
-  for f in field_def:
-    if f["is_key"]:
-      final_key_cols.append(f["name"])
-
-  dst_definitions = {
-    "data_name": sheet_name,
-    "definition": final_definition,
-    "key_cols": final_key_cols,
-    "field_def": field_def,
-    "output_path": f'{sheet_name}.xlsx',
-  }
+  final_definition.columns = [
+    xlsx[f'column_{i+1}'][config["row"]["data"]-1] for i in range(config["column"]["dst"])
+  ]
+  dst_definitions = get_dst_definition(data_name, final_definition)
   # print(f'dst_definitions: {dst_definitions}')
 
   # 元データを取り出し
-  # 元データの数
-  src_cols_num = (len(xlsx.columns) - (final_cols_num + 1))
-  src_data_num, x = divmod(src_cols_num, columns_per_src)
+  src_cols_num = (len(xlsx.columns) - (config["column"]["dst"] + 1))
+  src_data_num, x = divmod(src_cols_num, config["columns_per_src"])
   # 列数が不正の場合はException
   if x != 0:
-    print(f"元データの列数が不正です。xlsx.columns: {len(xlsx.columns)}, src_cols_num: {src_cols_num}, columns_per_src: {columns_per_src}, src_data_num: {src_data_num}, x: {x}")
+    print(f"元データの列数が不正です。")
+    print(f"xlsx.columns: {len(xlsx.columns)}, src_cols_num: {src_cols_num}, src_data_num: {src_data_num}, x: {x}")
   # print(src_data_num)
 
   # 元データの定義
   src_definitions = []
   for i in range(src_data_num):
-    # 対象範囲
-    start_col_num = final_cols_num + 1 + i * columns_per_src
-    end_col_num = start_col_num + columns_per_src
-    # print(f'start_col_num: {start_col_num}, end_col_num: {end_col_num}')
-    # 名称生成
-    sys_name = xlsx[f'column_{start_col_num + 1}'][2]
-    mst_name = xlsx[f'column_{start_col_num + 1}'][3]
-    data_name = f'{sys_name}_{mst_name}'
-    # print(f'data_name: {data_name}')
-    # 定義取得
-    definition = data_rows.select([
-      data_rows[f'column_{i+1}'] for i in range(start_col_num, end_col_num)
-    ])
-    definition.columns = [xlsx[f'column_{i+1}'][data_row_num-1] for i in range(start_col_num, end_col_num)]
-    
-    field_def = []
-    for i, x in enumerate(definition["論理名"]):
-      # print(f'i: {i}, x: {x}')
-      if x != '' and x != '-':
-        f = {
-          "name": x,
-          "final_name": dst_definitions["field_def"][i]["name"],
-        }
-        f = add_field_definition(f, definition[i])
-        field_def.append(f)
-
-    key_cols = []
-    for f in field_def:
-      if f["is_key"]:
-        key_cols.append(f["name"])
-        
-    # print(f'field_def: {field_def}')
-    # データ取得
-    file_path = xlsx[f'column_{start_col_num + 1}'][4]
-    schema_overrides = {f["name"]: pl.Utf8 for f in field_def} # 0埋め数字の0が取れてしまうため、すべてUtf8にキャスト
-    # print(f'file_path: {file_path}, dtypes: {dtypes}')
-    src_df = pl.read_csv(file_path, schema_overrides=schema_overrides)
-    # null行を削除（is_null行を ~ で反転）
-    src_df = src_df.filter(~pl.all_horizontal(src_df.select(pl.all().is_null())))
-    src_definition = {
-      "definition": definition,
-      "data_name": data_name,
-      "key_cols": key_cols,
-      "field_def": field_def,
-      "data": src_df
-    }
+    # 開始列、終了列
+    start = config["column"]["dst"] + 1 + i * config['columns_per_src']
+    end = start + config['columns_per_src']
+    # 元データの定義を読み込み
+    src_definition = get_src_definition(config, xlsx, start, end, dst_definitions)
+    # 元データを取得
+    file_path = xlsx[f'column_{start + 1}'][config["row"]["file_path"]]
+    src_definition["df"] = get_src_data(file_path, src_definition)
+    # 返却値に追加
     src_definitions.append(src_definition)
   
   # print(src_definitions)
@@ -153,6 +115,85 @@ def read_definition():
     dst_definitions,
     src_definitions,
   )
+
+def get_dst_definition(data_name, definition):
+
+  # 最終形のカラム名
+  field_def = []
+  for i, x in enumerate(definition["論理名"].to_list()):
+    # print(f'i: {i}, x: {x}')
+    f = {
+      "name": x,
+    }
+    f = add_field_definition(f, definition[i])
+    field_def.append(f)
+
+  # 最終形のキー項目
+  final_key_cols = []
+  for f in field_def:
+    if f["is_key"]:
+      final_key_cols.append(f["name"])
+
+  return {
+    "data_name": data_name,
+    "definition": definition,
+    "key_cols": final_key_cols,
+    "field_def": field_def,
+    "output_path": f'{data_name}.xlsx',
+  }
+
+def get_src_definition(config, xlsx, start, end, dst_definitions):
+
+  # データ行を取り出し
+  data_name = config["data_name"]
+  data_rows = xlsx[config["row"]["data"]:]
+  # 定義
+  sys_column = 2
+  mst_column = 3
+  # print(f'start_col_num: {start_col_num}, end_col_num: {end_col_num}')
+  # 名称生成
+  sys_name = xlsx[f'column_{start + 1}'][sys_column]
+  mst_name = xlsx[f'column_{start + 1}'][mst_column]
+  data_name = f'{sys_name}_{mst_name}'
+  # print(f'data_name: {data_name}')
+  # 定義取得
+  definition = data_rows.select([
+    data_rows[f'column_{i+1}'] for i in range(start, end)
+  ])
+  definition.columns = [xlsx[f'column_{i+1}'][config["row"]["data"]-1] for i in range(start, end)]
+  
+  field_def = []
+  for i, x in enumerate(definition["論理名"]):
+    # print(f'i: {i}, x: {x}')
+    if x != '' and x != '-':
+      f = {
+        "name": x,
+        "final_name": dst_definitions["field_def"][i]["name"],
+      }
+      f = add_field_definition(f, definition[i])
+      field_def.append(f)
+
+  key_cols = []
+  for f in field_def:
+    if f["is_key"]:
+      key_cols.append(f["name"])
+      
+  # print(f'field_def: {field_def}')
+  # データ取得
+  return {
+    "definition": definition,
+    "data_name": data_name,
+    "key_cols": key_cols,
+    "field_def": field_def,
+  }
+
+def get_src_data(file_path, definition):
+  # 0埋め数字の0が取れてしまうため、すべてUtf8にキャスト
+  schema_overrides = {f["name"]: pl.Utf8 for f in definition["field_def"]}
+  src_df = pl.read_csv(file_path, schema_overrides=schema_overrides)
+  # null行を削除（is_null行を ~ で反転）
+  src_df = src_df.filter(~pl.all_horizontal(src_df.select(pl.all().is_null())))
+  return src_df  
 
 def add_field_definition(field, definition):
 
@@ -217,8 +258,8 @@ def initialize_dfs(datas):
   # dfごとにループ
   for idx, d in enumerate(datas):
     # 全データをstrにキャスト
-    df = cast_to_str(d["data"])
-    datas[idx]["data"] = df
+    df = cast_to_str(d["df"])
+    datas[idx]["df"] = df
 
   return datas
 
@@ -232,7 +273,7 @@ def check_dfs(datas):
   errors = []
 
   for d in datas:
-    errors = check_df(d["data_name"], d["data"], d["key_cols"], d["field_def"])
+    errors = check_df(d["data_name"], d["df"], d["key_cols"], d["field_def"])
 
   return errors
 
@@ -339,20 +380,21 @@ def process_dfs(srcs, dst):
     src_name = src["data_name"]
 
     # システムB_Bマスタの場合
-    if dst_name == '1_Aマスタ':
+    print(f'src_name: {src_name}, dst_name: {dst_name}')
+    if dst_name == '001_Aマスタ':
       if src_name == 'システムB_Bマスタ':
-        src["data"] = modify_001_01(src)
+        src["df"] = modify_001_01(src)
         srcs[idx] = src
         continue
       if src_name == 'システムC_Cマスタ':
-        src["data"] = modify_001_02(src)
+        src["df"] = modify_001_02(src)
         srcs[idx] = src
         continue
 
   return srcs
 
 def modify_001_01(src):
-  df = src["data"]
+  df = src["df"]
   query = []
   for f in src["field_def"]:
     col = f["name"]
@@ -364,7 +406,7 @@ def modify_001_01(src):
   return df.select(query)
 
 def modify_001_02(src):
-  df = src["data"]
+  df = src["df"]
   query = []
   for f in src["field_def"]:
     col = f["name"]
@@ -379,11 +421,11 @@ def merge_dfs(datas, final_key_cols, final_field_def):
 
   # カラム名を最終形に統一
   for i, d in enumerate(datas):
-    df = d["data"]
+    df = d["df"]
     df = df.select([
       pl.col(f["name"]).alias(f["final_name"]) for f in d["field_def"]
     ])
-    datas[i]["data"] = df
+    datas[i]["df"] = df
   
   final_cols = [f["name"] for f in final_field_def]
   
@@ -392,15 +434,15 @@ def merge_dfs(datas, final_key_cols, final_field_def):
   # print(f'final_cols: {final_cols}')
 
   # 両方のキーをマージし、キーのみのdfを作成
-  key_only_df = pl.concat([d["data"][final_key_cols] for d in datas]).unique().sort(by=final_key_cols)
+  key_only_df = pl.concat([d["df"][final_key_cols] for d in datas]).unique().sort(by=final_key_cols)
   print(f'key: {key_only_df}')
 
   # 元データのdfを順番にマージ
   prev_df = key_only_df
   for d in datas:
-    with time_log(f"[{d['data_name']}] {len(d['data'])}件のマージ処理"):
+    with time_log(f"[{d['data_name']}] {len(d['df'])}件のマージ処理"):
       # カラム名を最終形に統一
-      next_df = d["data"]
+      next_df = d["df"]
 
       # マージ用のクエリを生成
       merge_query = create_merge_query(
