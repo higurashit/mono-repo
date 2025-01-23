@@ -45,7 +45,12 @@ def hanlder(e={}):
         print(f'dst_errors: {dst_errors}')
 
       with time_log(f"結果データのファイル出力処理"):
-        output_excel(result_df, dst)
+        if dst["output"]["ptn"] == 'xlsx':
+          output_excel(result_df, dst)
+        elif dst["output"]["ptn"] == 'csv':
+          output_csv(result_df, dst)
+        else:
+          raise Exception(f'output_ptnが xlsx, csv ではありません。: {dst["output"]["ptn"]}')
 
 def read_excel(file_path: str):
   # 全シート読み込み
@@ -66,9 +71,11 @@ def read_definition(data_name, xlsx):
       "sys_name": 2,
       "mst_name": 3,
       "file_path": 4,
+      "outfile_ptn": 4,
       "data": 8 # 9行目以降がデータ行
     },
     "column": {
+      "outfile_ptn": 2, # 2列目が出力ファイル名のパターン
       "dst": 19 # 19列目までが最終形の定義
     }, 
     "columns_per_src": 7,
@@ -83,7 +90,7 @@ def read_definition(data_name, xlsx):
   final_definition.columns = [
     xlsx[f'column_{i+1}'][config["row"]["data"]-1] for i in range(config["column"]["dst"])
   ]
-  dst_definitions = get_dst_definition(data_name, final_definition)
+  dst_definitions = get_dst_definition(config, xlsx, final_definition)
   # print(f'dst_definitions: {dst_definitions}')
 
   # 元データの件数を算出
@@ -115,7 +122,7 @@ def read_definition(data_name, xlsx):
     src_definitions,
   )
 
-def get_dst_definition(data_name, definition):
+def get_dst_definition(config, xlsx, definition):
 
   # 最終形のカラム名
   field_def = []
@@ -132,13 +139,24 @@ def get_dst_definition(data_name, definition):
   for f in field_def:
     if f["is_key"]:
       final_key_cols.append(f["name"])
+  
+  # 出力ファイルの形式
+  output_ptn_col = f'column_{config["column"]["outfile_ptn"]}'
+  output_ptn_row = config["row"]["outfile_ptn"]
+  # print(f'col: {output_ptn_col}, row: {output_ptn_row}')
+  output_ptn = xlsx[output_ptn_col][output_ptn_row]
+  output_path = f'{config["data_name"]}.{output_ptn}'
+  # print(f'ptn: {output_ptn}, path: {output_path}')
 
   return {
-    "data_name": data_name,
+    "data_name": config["data_name"],
     "definition": definition,
     "key_cols": final_key_cols,
     "field_def": field_def,
-    "output_path": f'{data_name}.xlsx',
+    "output": {
+      "ptn": output_ptn,
+      "path": output_path,
+    }
   }
 
 def get_src_definition(config, xlsx, start, end, dst_definitions):
@@ -194,10 +212,12 @@ def get_src_data(file_path, definition):
 def add_field_definition(field, definition):
 
   # print(f'field: {field}, definition: {definition}')
-
   defi = get_def_dict(definition)
   # print(f'defi: {defi}')
-
+  
+  # 物理名
+  if defi.get("物理名") and defi.get("物理名") != '-':
+    field["physical_name"] = defi["物理名"]
   # 型, 桁数
   if defi["型"] == 'varchar':
     field["type"] = str
@@ -376,7 +396,7 @@ def process_dfs(srcs, dst):
     src_name = src["data_name"]
 
     # システムB_Bマスタの場合
-    print(f'src_name: {src_name}, dst_name: {dst_name}')
+    # print(f'src_name: {src_name}, dst_name: {dst_name}')
     if dst_name == '001_Aマスタ':
       if src_name == 'システムB_Bマスタ':
         src["df"] = modify_001_01(src)
@@ -520,50 +540,70 @@ def set_default_values(df, final_field_def):
   return df.select(query)
 
 def output_excel(df:pl.DataFrame, dst):
-  file_path = dst["output_path"]
-  definition = dst["definition"]
-  cols = [f["name"] for f in dst["field_def"]]
-
-  # Create a new workbook
+  # 元データをExcelに貼り付け
   wb = Workbook()
-  # grab the active worksheet
   ws = wb.active
   ws.title = '元データ'
   ws.append(df.columns)
   for d in df.to_dicts():
     ws.append(list(d.values()))
 
+  # 定義に従って列順を変換して出力
+  definition = dst["definition"]
   columuns = definition.columns
   sheets = definition.select(columuns[9:18])
-  print(f'sheets: {sheets}')
+  # print(f'sheets: {sheets}')
   for sheet_name, sheet_row_nums in sheets.to_dict().items():
-    row_nums_without_null = list(filter(lambda x: x != '' and x != '-', sheet_row_nums.to_list()))
-    if len(row_nums_without_null) == 0:
+    # 列変換用のクエリを取得
+    col_names = [f["name"] for f in dst["field_def"]]
+    query = create_column_transformation_query(sheet_row_nums, col_names, col_names)
+    # print(f'query: {query}')
+    if len(query) == 0:
       continue
-    max_row_nums = max([int(x) for x in row_nums_without_null])
-    print(f'{sheet_name}: {row_nums_without_null}: max => {max_row_nums}')
-
-    # 初期値は空白
-    query = [pl.lit(None).alias(f'col_{i}') for i in range(max_row_nums)]
-    is_output = False
-    for idx, row_num in enumerate(sheet_row_nums.to_list()):
-      # print(f'{idx}: {row_num}: {cols[idx]}')
-      # 数値が設定されている場合
-      if row_num != '' and row_num != '-':
-        # 設定されている数値を列番号として、当該列を設定
-        query[int(row_num) - 1] = pl.col(cols[idx])
-        is_output = True
-    if is_output:
-      ws = wb.create_sheet(title=sheet_name)
-      # print(f'query: {query}')
-      ret_df = df.select(query)
-      ws.append(ret_df.columns)
-      for d in ret_df.to_dicts():
-        ws.append(list(d.values()))
-      
-  # Save the file
+    # 指定のExcelシートにクエリ結果を出力
+    ret_df = df.select(query)
+    ws = wb.create_sheet(title=sheet_name)
+    ws.append(ret_df.columns)
+    for d in ret_df.to_dicts():
+      ws.append(list(d.values()))
+  # Excelを保存
+  file_path = dst["output"]["path"]
   wb.save(file_path)
 
+def output_csv(df:pl.DataFrame, dst):
+  
+  # 定義に従って列順を変換して出力
+  definition = dst["definition"]
+  columuns = definition.columns
+  _, row_nums = definition.select(columuns[9]).to_dict().popitem()
+
+  # 列変換用のクエリを取得
+  col_names = [f["name"] for f in dst["field_def"]]
+  col_physical_names = [f["physical_name"] for f in dst["field_def"]]
+  query = create_column_transformation_query(row_nums, col_names, col_physical_names)
+  ret_df = df.select(query)
+  print(f'ret_df: {ret_df}')
+
+  # CSVに出力して保存
+  file_path = dst["output"]["path"]
+  ret_df.write_csv(file=file_path, separator=',')
+
+def create_column_transformation_query(row_nums, col_names, aliases):
+  # 出力列数の配列を取得
+  row_nums_without_null = list(filter(lambda x: x != '' and x != '-', row_nums.to_list()))
+  if len(row_nums_without_null) == 0:
+    return []
+  # 出力列の最大値を取得
+  max_row_nums = max([int(x) for x in row_nums_without_null])
+  query = [pl.lit(None).alias(f'col_{i}') for i in range(max_row_nums)]
+  for idx, row_num in enumerate(row_nums.to_list()):
+    # print(f'{idx}: {row_num}: {cols[idx]}')
+    # 数値が設定されている場合
+    if row_num != '' and row_num != '-':
+      # 設定されている数値を列番号として、当該列を設定
+      query[int(row_num) - 1] = pl.col(col_names[idx]).alias(aliases[idx])
+      # print(f'query: {query}')
+  return query
 
 @contextmanager
 def time_log(msg:str):
