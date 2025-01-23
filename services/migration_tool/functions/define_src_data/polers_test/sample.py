@@ -63,20 +63,20 @@ def read_definition(data_name, xlsx):
   config = {
     "data_name": data_name,
     "row": {
+      "sys_name": 2,
+      "mst_name": 3,
       "file_path": 4,
       "data": 8 # 9行目以降がデータ行
     },
     "column": {
       "dst": 19 # 19列目までが最終形の定義
-    },
-    "final_cols_num": 19, 
+    }, 
     "columns_per_src": 7,
-    
   }
 
   # データ行を取り出し
   data_rows = xlsx[config["row"]["data"]:]
-  # 1列目までが最終形の定義
+  # 最終形の定義の取得
   final_definition = data_rows.select([
      data_rows[f'column_{i+1}'] for i in range(config["column"]["dst"])
   ])
@@ -86,19 +86,18 @@ def read_definition(data_name, xlsx):
   dst_definitions = get_dst_definition(data_name, final_definition)
   # print(f'dst_definitions: {dst_definitions}')
 
-  # 元データを取り出し
+  # 元データの件数を算出
   src_cols_num = (len(xlsx.columns) - (config["column"]["dst"] + 1))
   src_data_num, x = divmod(src_cols_num, config["columns_per_src"])
-  # 列数が不正の場合はException
+  # 列数が不正の場合
   if x != 0:
     print(f"元データの列数が不正です。")
     print(f"xlsx.columns: {len(xlsx.columns)}, src_cols_num: {src_cols_num}, src_data_num: {src_data_num}, x: {x}")
-  # print(src_data_num)
 
-  # 元データの定義
+  # 元データの定義とデータを取得
   src_definitions = []
   for i in range(src_data_num):
-    # 開始列、終了列
+    # 元データの開始列、終了列を算出
     start = config["column"]["dst"] + 1 + i * config['columns_per_src']
     end = start + config['columns_per_src']
     # 元データの定義を読み込み
@@ -147,13 +146,10 @@ def get_src_definition(config, xlsx, start, end, dst_definitions):
   # データ行を取り出し
   data_name = config["data_name"]
   data_rows = xlsx[config["row"]["data"]:]
-  # 定義
-  sys_column = 2
-  mst_column = 3
   # print(f'start_col_num: {start_col_num}, end_col_num: {end_col_num}')
   # 名称生成
-  sys_name = xlsx[f'column_{start + 1}'][sys_column]
-  mst_name = xlsx[f'column_{start + 1}'][mst_column]
+  sys_name = xlsx[f'column_{start + 1}'][config["row"]["sys_name"]]
+  mst_name = xlsx[f'column_{start + 1}'][config["row"]["mst_name"]]
   data_name = f'{sys_name}_{mst_name}'
   # print(f'data_name: {data_name}')
   # 定義取得
