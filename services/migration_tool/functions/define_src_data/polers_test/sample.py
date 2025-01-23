@@ -26,6 +26,9 @@ def hanlder(e={}):
       src_errors = check_dfs(srcs)
       print(f'src_errors: {src_errors}')
 
+    with time_log(f"元データの加工処理"):
+      srcs = process_dfs(srcs, dst)
+
     with time_log(f"データのマージ処理"):
       merged_df = merge_dfs(srcs, dst["key_cols"], dst["field_def"])
 
@@ -76,6 +79,7 @@ def read_definition():
       final_key_cols.append(f["name"])
 
   dst_definitions = {
+    "data_name": sheet_name,
     "definition": final_definition,
     "key_cols": final_key_cols,
     "field_def": field_def,
@@ -132,6 +136,8 @@ def read_definition():
     schema_overrides = {f["name"]: pl.Utf8 for f in field_def} # 0埋め数字の0が取れてしまうため、すべてUtf8にキャスト
     # print(f'file_path: {file_path}, dtypes: {dtypes}')
     src_df = pl.read_csv(file_path, schema_overrides=schema_overrides)
+    # null行を削除（is_null行を ~ で反転）
+    src_df = src_df.filter(~pl.all_horizontal(src_df.select(pl.all().is_null())))
     src_definition = {
       "definition": definition,
       "data_name": data_name,
@@ -325,6 +331,49 @@ def check_enum_data(df, field_def):
             "error": f"enum error: {f.get('name')} に {data} が格納されています。"
           })
   return errors
+
+def process_dfs(srcs, dst):
+
+  dst_name = dst["data_name"]
+  for idx, src in enumerate(srcs):
+    src_name = src["data_name"]
+
+    # システムB_Bマスタの場合
+    if dst_name == '1_Aマスタ':
+      if src_name == 'システムB_Bマスタ':
+        src["data"] = modify_001_01(src)
+        srcs[idx] = src
+        continue
+      if src_name == 'システムC_Cマスタ':
+        src["data"] = modify_001_02(src)
+        srcs[idx] = src
+        continue
+
+  return srcs
+
+def modify_001_01(src):
+  df = src["data"]
+  query = []
+  for f in src["field_def"]:
+    col = f["name"]
+    # 8桁未満の場合は、8桁になるまで先頭0埋め
+    if col == 'Bコード':
+      query.append(pl.col(col).str.zfill(8))
+    else:
+      query.append(pl.col(col))
+  return df.select(query)
+
+def modify_001_02(src):
+  df = src["data"]
+  query = []
+  for f in src["field_def"]:
+    col = f["name"]
+    # 8桁未満の場合は、8桁になるまで先頭0埋め
+    if col == 'Cコード':
+      query.append(pl.col(col).str.zfill(8))
+    else:
+      query.append(pl.col(col))
+  return df.select(query)
 
 def merge_dfs(datas, final_key_cols, final_field_def):
 
