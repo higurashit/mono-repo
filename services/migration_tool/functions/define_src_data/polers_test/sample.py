@@ -45,12 +45,12 @@ def hanlder(e={}):
         print(f'dst_errors: {dst_errors}')
 
       with time_log(f"結果データのファイル出力処理"):
-        if dst["output"]["ptn"] == 'xlsx':
+        if dst["output"]["type"] == 'xlsx':
           output_excel(result_df, dst)
-        elif dst["output"]["ptn"] == 'csv':
+        elif dst["output"]["type"] == 'csv':
           output_csv(result_df, dst)
         else:
-          raise Exception(f'output_ptnが xlsx, csv ではありません。: {dst["output"]["ptn"]}')
+          raise Exception(f'output_typeが xlsx, csv ではありません。: {dst["output"]["type"]}')
 
 def read_excel(file_path: str):
   # 全シート読み込み
@@ -71,11 +71,11 @@ def read_definition(data_name, xlsx):
       "sys_name": 2,
       "mst_name": 3,
       "file_path": 4,
-      "outfile_ptn": 4,
+      "outfile_type": 4,
       "data": 8 # 9行目以降がデータ行
     },
     "column": {
-      "outfile_ptn": 2, # 2列目が出力ファイル名のパターン
+      "outfile_type": 2, # 2列目が出力ファイル名のパターン
       "dst": 19 # 19列目までが最終形の定義
     }, 
     "columns_per_src": 7,
@@ -141,12 +141,12 @@ def get_dst_definition(config, xlsx, definition):
       final_key_cols.append(f["name"])
   
   # 出力ファイルの形式
-  output_ptn_col = f'column_{config["column"]["outfile_ptn"]}'
-  output_ptn_row = config["row"]["outfile_ptn"]
-  # print(f'col: {output_ptn_col}, row: {output_ptn_row}')
-  output_ptn = xlsx[output_ptn_col][output_ptn_row]
-  output_path = f'{config["data_name"]}.{output_ptn}'
-  # print(f'ptn: {output_ptn}, path: {output_path}')
+  output_type_col = f'column_{config["column"]["outfile_type"]}'
+  output_type_row = config["row"]["outfile_type"]
+  # print(f'col: {output_type_col}, row: {output_type_row}')
+  output_type = xlsx[output_type_col][output_type_row]
+  output_path = f'{config["data_name"]}.{output_type}'
+  # print(f'type: {output_type}, path: {output_path}')
 
   return {
     "data_name": config["data_name"],
@@ -154,7 +154,7 @@ def get_dst_definition(config, xlsx, definition):
     "key_cols": final_key_cols,
     "field_def": field_def,
     "output": {
-      "ptn": output_ptn,
+      "type": output_type,
       "path": output_path,
     }
   }
@@ -221,12 +221,15 @@ def add_field_definition(field, definition):
   # 型, 桁数
   if defi["型"] == 'varchar':
     field["type"] = str
+    field["typestr"] = 'str'
     if defi["桁数"] != '' and defi["桁数"] != '-':
       field["max_length"] = int(defi["桁数"])
   elif defi["型"] == 'timestamp':
     field["type"] = datetime
+    field["typestr"] = 'datetime'
   elif defi["型"] == 'numeric':
     field["type"] = int
+    field["typestr"] = 'int'
     if defi["桁数"] != '' and defi["桁数"] != '-':
       # 整数部分をn, 小数部分をfで定義
       n = defi["桁数"]
@@ -241,6 +244,7 @@ def add_field_definition(field, definition):
       # 小数
       if int(f) > 0:
         field["type"] = Decimal
+        field["typestr"] = 'Decimal'
         field["max_digits"] = int(n)
         field["decimal_places"] = int(f)
   # NULL NG
@@ -390,22 +394,20 @@ def check_enum_data(df, field_def):
   return errors
 
 def process_dfs(srcs, dst):
-
+  # 出力データ名
   dst_name = dst["data_name"]
   for idx, src in enumerate(srcs):
+    # 入力データ名
     src_name = src["data_name"]
-
-    # システムB_Bマスタの場合
+    # 個別要件のカスタマイズポイント
     # print(f'src_name: {src_name}, dst_name: {dst_name}')
     if dst_name == '001_Aマスタ':
       if src_name == 'システムB_Bマスタ':
         src["df"] = modify_001_01(src)
         srcs[idx] = src
-        continue
       if src_name == 'システムC_Cマスタ':
         src["df"] = modify_001_02(src)
         srcs[idx] = src
-        continue
 
   return srcs
 
@@ -556,7 +558,7 @@ def output_excel(df:pl.DataFrame, dst):
   for sheet_name, sheet_row_nums in sheets.to_dict().items():
     # 列変換用のクエリを取得
     col_names = [f["name"] for f in dst["field_def"]]
-    query = create_column_transformation_query(sheet_row_nums, col_names, col_names)
+    query = create_column_transformation_query(sheet_row_nums, col_names, col_names, dst)
     # print(f'query: {query}')
     if len(query) == 0:
       continue
@@ -580,7 +582,7 @@ def output_csv(df:pl.DataFrame, dst):
   # 列変換用のクエリを取得
   col_names = [f["name"] for f in dst["field_def"]]
   col_physical_names = [f["physical_name"] for f in dst["field_def"]]
-  query = create_column_transformation_query(row_nums, col_names, col_physical_names)
+  query = create_column_transformation_query(row_nums, col_names, col_physical_names, dst)
   ret_df = df.select(query)
   print(f'ret_df: {ret_df}')
 
@@ -588,7 +590,8 @@ def output_csv(df:pl.DataFrame, dst):
   file_path = dst["output"]["path"]
   ret_df.write_csv(file=file_path, separator=',')
 
-def create_column_transformation_query(row_nums, col_names, aliases):
+def create_column_transformation_query(row_nums, col_names, aliases, dst):
+  # print(f'dst: {dst}')
   # 出力列数の配列を取得
   row_nums_without_null = list(filter(lambda x: x != '' and x != '-', row_nums.to_list()))
   if len(row_nums_without_null) == 0:
@@ -601,8 +604,26 @@ def create_column_transformation_query(row_nums, col_names, aliases):
     # 数値が設定されている場合
     if row_num != '' and row_num != '-':
       # 設定されている数値を列番号として、当該列を設定
-      query[int(row_num) - 1] = pl.col(col_names[idx]).alias(aliases[idx])
-      # print(f'query: {query}')
+      query_idx = int(row_num) - 1
+      col_name = col_names[idx]
+      alias = aliases[idx]
+      query[query_idx] = pl.col(col_name).alias(alias)
+      # CSVかつdatetimeの場合、フォーマット変換する
+      output_type = dst['output']['type']      
+      typestr = dst['field_def'][idx]['typestr']
+      if output_type == 'csv' and typestr == "datetime":
+        query[query_idx] = (
+          pl.when(is_null_or_blank(col_name))
+          .then(pl.col(col_name))
+          .otherwise(
+            # nullでない場合、年月日と時刻の間に|を入れる
+            pl.col(col_name)
+            .str.to_datetime()
+            .dt.strftime("%Y-%m-%d|%H:%M:%S")
+          )
+          .alias(alias)
+        )
+  print(f'query: {query}')
   return query
 
 @contextmanager
