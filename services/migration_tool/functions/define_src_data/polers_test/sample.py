@@ -31,17 +31,17 @@ def hanlder(e={}):
         print(f'src_errors: {src_errors}')
 
       with time_log(f"元データの加工処理"):
-        srcs = process_dfs(srcs, dst)
+        srcs = process_src_dfs(srcs, dst)
 
       with time_log(f"データのマージ処理"):
-        merged_df = merge_dfs(srcs, dst["key_cols"], dst["field_def"])
+        merged_df = merge_dfs(srcs, dst)
 
       with time_log(f"結果データへの初期値設定処理"):
-        result_df = set_default_values(merged_df, dst["field_def"])
+        result_df = set_default_values(merged_df, dst)
         print(f'result df: {result_df}')
 
       with time_log(f"結果データのチェック処理"):
-        dst_errors = check_df("result", result_df, dst["key_cols"], dst["field_def"])
+        dst_errors = check_df("result", result_df, dst)
         print(f'dst_errors: {dst_errors}')
 
       with time_log(f"結果データのファイル出力処理"):
@@ -293,11 +293,14 @@ def check_dfs(datas):
   errors = []
 
   for d in datas:
-    errors = check_df(d["data_name"], d["df"], d["key_cols"], d["field_def"])
+    errors = check_df(d["data_name"], d["df"], d)
 
   return errors
 
-def check_df(name, df, key_cols, field_def):
+def check_df(name, df, dst):
+
+  key_cols = dst["key_cols"]
+  field_def = dst["field_def"]
 
   with time_log(f"[{name}] {len(df)}件のチェック処理"):
     errors = []
@@ -393,7 +396,7 @@ def check_enum_data(df, field_def):
           })
   return errors
 
-def process_dfs(srcs, dst):
+def process_src_dfs(srcs, dst):
   # 出力データ名
   dst_name = dst["data_name"]
   for idx, src in enumerate(srcs):
@@ -435,7 +438,9 @@ def modify_001_02(src):
       query.append(pl.col(col))
   return df.select(query)
 
-def merge_dfs(datas, final_key_cols, final_field_def):
+def merge_dfs(datas, dst):
+  final_key_cols = dst["key_cols"]
+  final_field_def = dst["field_def"]
 
   # カラム名を最終形に統一
   for i, d in enumerate(datas):
@@ -508,8 +513,8 @@ def create_merge_query(prev_cols, next_cols, final_key_cols, final_cols):
   
   return query
 
-def set_default_values(df, final_field_def):
-  
+def set_default_values(df, dst):
+  final_field_def = dst["field_def"]
   # print(f'final_field_def: {final_field_def}')
 
   default_values = {f["name"]: f["default"] for f in final_field_def}
@@ -574,18 +579,20 @@ def output_excel(df:pl.DataFrame, dst):
 
 def output_csv(df:pl.DataFrame, dst):
   
-  # 定義に従って列順を変換して出力
   definition = dst["definition"]
-  columuns = definition.columns
-  _, row_nums = definition.select(columuns[9]).to_dict().popitem()
-
-  # 列変換用のクエリを取得
+  columns = definition.columns
+  # CSVは一番左の出力列（10列目）を採用
+  _, row_nums = definition.select(columns[9]).to_dict().popitem()
   col_names = [f["name"] for f in dst["field_def"]]
-  col_physical_names = [f["physical_name"] for f in dst["field_def"]]
-  query = create_column_transformation_query(row_nums, col_names, col_physical_names, dst)
-  ret_df = df.select(query)
-  print(f'ret_df: {ret_df}')
+  # CSVはエイリアスを物理名で指定
+  aliases = [f["physical_name"] for f in dst["field_def"]]
 
+  # print(f'definition: {definition}, columns: {columns}, row_nums: {row_nums}')
+  # CSVはエイリアスを物理名で指定
+  query = create_column_transformation_query(row_nums, col_names, aliases, dst)
+  ret_df = df.select(query)
+
+  # 定義に従って列順を変換して出力
   # CSVに出力して保存
   file_path = dst["output"]["path"]
   ret_df.write_csv(file=file_path, separator=',')
@@ -598,7 +605,7 @@ def create_column_transformation_query(row_nums, col_names, aliases, dst):
     return []
   # 出力列の最大値を取得
   max_row_nums = max([int(x) for x in row_nums_without_null])
-  query = [pl.lit(None).alias(f'col_{i}') for i in range(max_row_nums)]
+  query = [pl.lit('').alias(f'col_{i}') for i in range(max_row_nums)]
   for idx, row_num in enumerate(row_nums.to_list()):
     # print(f'{idx}: {row_num}: {cols[idx]}')
     # 数値が設定されている場合
@@ -611,20 +618,31 @@ def create_column_transformation_query(row_nums, col_names, aliases, dst):
       # CSVかつdatetimeの場合、フォーマット変換する
       output_type = dst['output']['type']      
       typestr = dst['field_def'][idx]['typestr']
-      if output_type == 'csv' and typestr == "datetime":
+      if typestr == "datetime":
+        result_fmt = '%Y-%m-%d %H:%M:%S'
+        if output_type == 'csv':
+          result_fmt = '%Y-%m-%d|%H:%M:%S'
+        # 年月日と時刻の間に|を入れる
         query[query_idx] = (
-          pl.when(is_null_or_blank(col_name))
-          .then(pl.col(col_name))
-          .otherwise(
-            # nullでない場合、年月日と時刻の間に|を入れる
-            pl.col(col_name)
-            .str.to_datetime()
-            .dt.strftime("%Y-%m-%d|%H:%M:%S")
-          )
-          .alias(alias)
+          pl.coalesce(
+            strptime_with_fmt(col_name, "%Y-%m-%d %H:%M:%S"),
+            strptime_with_fmt(col_name, "%Y-%m-%d"),
+            strptime_with_fmt(col_name, "%Y/%m/%d %H:%M:%S"),
+            strptime_with_fmt(col_name, "%Y/%m/%d"),
+          ).dt.strftime(result_fmt).alias(alias)
         )
+        print(f'idx: {query_idx}, query: {query[query_idx]}')
   print(f'query: {query}')
   return query
+
+def strptime_with_fmt(column, date_fmt) -> pl.Expr:
+  # カラム値がすべてnullの場合にカラム型がnullになる
+  # カラム型がnullの場合、空文字に変換してからstrptimeメソッドを実行
+  return (
+    pl.col(column)
+    .fill_null('')
+    .str.strptime(pl.Datetime, date_fmt, strict=False)
+  )
 
 @contextmanager
 def time_log(msg:str):
