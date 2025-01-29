@@ -1,10 +1,11 @@
 import polars as pl
 from pydantic import Field, create_model, ValidationError
-from openpyxl import Workbook
+from openpyxl import Workbook, load_workbook
 from decimal import Decimal
 from contextlib import contextmanager
 from datetime import datetime
 import time
+import os
 
 DEBUG = True
 
@@ -21,6 +22,14 @@ def hanlder(e={}):
     
     for key in xlsx_list:
       dst, srcs = read_definition(key, xlsx_list[key])
+
+      # 書き込みロックが開放されるまで待機
+      file_path = dst["output"]["path"]
+      lock_file = f"{file_path}.lock"
+      waiting_lock(lock_file)
+
+      # 書き込みロック
+      create_lock_file(lock_file)
 
       with time_log(f"元データの初期化処理"):
         srcs = initialize_dfs(srcs)
@@ -51,6 +60,9 @@ def hanlder(e={}):
           output_csv(result_df, dst)
         else:
           raise Exception(f'output_typeが xlsx, csv ではありません。: {dst["output"]["type"]}')
+
+      # ロックの解除
+      delete_lock_file(lock_file)
 
 def read_excel(file_path: str):
   # 全シート読み込み
@@ -269,6 +281,22 @@ def get_def_dict(defi):
   return {
     d: defi[d][0] for d in defi.columns
   }
+
+def waiting_lock(file_path, n=0):
+  
+  if os.path.isfile(file_path):
+    print(f"{file_path} ファイルが存在します")
+    time.sleep(3)
+    waiting_lock(file_path, n+1)
+  
+  return True
+
+def create_lock_file(file_path):
+  with open(file_path, 'w') as f:
+    f.write('lock')
+
+def delete_lock_file(lock_file):
+  os.remove(lock_file)
 
 def initialize_dfs(datas):
 
@@ -547,10 +575,12 @@ def set_default_values(df, dst):
   return df.select(query)
 
 def output_excel(df:pl.DataFrame, dst):
+  
+  file_path = dst["output"]["path"]
+
   # 元データをExcelに貼り付け
-  wb = Workbook()
-  ws = wb.active
-  ws.title = '元データ'
+  wb = load_workbook(file_path)
+  ws = wb.create_sheet(title=f'元データ_{dst["data_name"]}')
   ws.append(df.columns)
   for d in df.to_dicts():
     ws.append(list(d.values()))
@@ -574,7 +604,6 @@ def output_excel(df:pl.DataFrame, dst):
     for d in ret_df.to_dicts():
       ws.append(list(d.values()))
   # Excelを保存
-  file_path = dst["output"]["path"]
   wb.save(file_path)
 
 def output_csv(df:pl.DataFrame, dst):
@@ -631,8 +660,8 @@ def create_column_transformation_query(row_nums, col_names, aliases, dst):
             strptime_with_fmt(col_name, "%Y/%m/%d"),
           ).dt.strftime(result_fmt).alias(alias)
         )
-        print(f'idx: {query_idx}, query: {query[query_idx]}')
-  print(f'query: {query}')
+        # print(f'idx: {query_idx}, query: {query[query_idx]}')
+  # print(f'query: {query}')
   return query
 
 def strptime_with_fmt(column, date_fmt) -> pl.Expr:
