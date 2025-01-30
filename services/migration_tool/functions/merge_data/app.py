@@ -1,8 +1,9 @@
-import json
-import random
+
+from handler import MigrationHandler
 
 def handler(event, context):
-    # TODO implement
-    return {
-        'continue': 0 == random.randint(0, 1)
-    }
+
+    migration_handler = MigrationHandler()
+    migration_settings = migration_handler.get_settings()
+
+    return migration_settings
