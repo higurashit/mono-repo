@@ -1,4 +1,0 @@
-polars
-fastexcel
-pydentic
-openpyxl
