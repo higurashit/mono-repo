@@ -9,23 +9,23 @@ def initialize_dfs(datas):
         datas[idx]["df"] = df
     return datas
 
-def cast_to_str(df):
+def cast_to_str(df:pl.DataFrame):
     return df.with_columns([pl.col(col).cast(pl.Utf8).alias(col) for col in df.columns])
 
-def check_dfs(datas):
+def check_datas(datas):
     errors = []
     for data in datas:
-        errors += check_df(data)
+        errors += check_data(data)
     return errors
 
-def check_df(data):
+def check_data(data):
 
     name = data["data_name"]
     key_cols = data["key_cols"]
     field_def = data["field_def"]
     df = data["df"]
 
-    with time_log(f"[{name}] {len(df)}件のチェック処理"):
+    with time_log(f"　[チェックプロセス] {name} ({len(df)}件)のチェック処理"):
         errors = []
         # キー重複チェック
         errors += check_data_duplicate(df, key_cols)
@@ -79,7 +79,7 @@ def create_dynamic_model(name, field_def):
         **fields
     )
 
-def check_data_definition(df, model):
+def check_data_definition(df:pl.DataFrame, model):
 
   errors = []
   for row in df.to_dicts():
@@ -159,12 +159,12 @@ def merge_dfs(datas, dst):
 
   # 両方のキーをマージし、キーのみのdfを作成
   key_only_df = pl.concat([d["df"][final_key_cols] for d in datas]).unique().sort(by=final_key_cols)
-  print(f'key: {key_only_df}')
+  # print(f'key: {key_only_df}')
 
   # 元データのdfを順番にマージ
   prev_df = key_only_df
   for d in datas:
-    with time_log(f"[{d['data_name']}] {len(d['df'])}件のマージ処理"):
+    with time_log(f"　[マージプロセス] {d['data_name']} ({len(d['df'])}件)のマージ処理"):
       # カラム名を最終形に統一
       next_df = d["df"]
 
@@ -304,7 +304,7 @@ def strptime_with_fmt(column, date_fmt) -> pl.Expr:
 # 個別編集要件
 ##################
 def modify_001_01(src):
-  df = src["df"]
+  df:pl.DataFrame = src["df"]
   query = []
   for f in src["field_def"]:
     col = f["name"]
@@ -316,7 +316,7 @@ def modify_001_01(src):
   return df.select(query)
 
 def modify_001_02(src):
-  df = src["df"]
+  df:pl.DataFrame = src["df"]
   query = []
   for f in src["field_def"]:
     col = f["name"]

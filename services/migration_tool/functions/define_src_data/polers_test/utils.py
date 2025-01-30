@@ -16,10 +16,10 @@ def debug_print(data):
     if DEBUG:
         print(data)
 
-def waiting_lock(file_path, retry=0):
+def check_lock_file(file_path, retry=0, interval_sec=3):
     while os.path.isfile(file_path):
-        print(f"{file_path} がロック中です。3秒後に再試行...（{retry + 1}回目）")
-        time.sleep(3)
+        print(f"{file_path} がロック中です。{interval_sec}秒後に再試行...（{retry + 1}回目）")
+        time.sleep(interval_sec)
         retry += 1
 
 def create_lock_file(file_path):

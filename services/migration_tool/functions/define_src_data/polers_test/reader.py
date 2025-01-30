@@ -124,31 +124,36 @@ def get_src_definitions(config, xlsx, dst_definitions):
           key_cols.append(f["name"])
           
       # print(f'field_def: {field_def}')
+      # 元データを取得
+      file_path = xlsx[f'column_{start + 1}'][config["row"]["file_path"]]
+      
       # データ取得
       src_definition = {
         "data_name": data_name,
         "definition": definition,
         "key_cols": key_cols,
         "field_def": field_def,
+        "input": {
+          "path": file_path,
+        }
       }
 
-
-
-      # 元データを取得
-      file_path = xlsx[f'column_{start + 1}'][config["row"]["file_path"]]
-      src_definition["df"] = get_src_data(file_path, src_definition)
-      # 返却値に追加
       src_definitions.append(src_definition)
     
     return src_definitions
 
-def get_src_data(file_path, definition):
-  # 0埋め数字の0が取れてしまうため、すべてUtf8にキャスト
-  schema_overrides = {f["name"]: pl.Utf8 for f in definition["field_def"]}
-  src_df = pl.read_csv(file_path, schema_overrides=schema_overrides)
-  # null行を削除（is_null行を ~ で反転）
-  src_df = src_df.filter(~pl.all_horizontal(src_df.select(pl.all().is_null())))
-  return src_df  
+def get_srcs_data(srcs):
+  for src in srcs:
+    file_path = src["input"]["path"]
+
+    # 0埋め数字の0が取れてしまうため、すべてUtf8にキャスト
+    schema_overrides = {f["name"]: pl.Utf8 for f in src["field_def"]}
+    src_df = pl.read_csv(file_path, schema_overrides=schema_overrides)
+    # null行を削除（is_null行を ~ で反転）
+    src_df = src_df.filter(~pl.all_horizontal(src_df.select(pl.all().is_null())))
+    src["df"] = src_df  
+
+  return srcs
 
 def add_field_definition(field, definition):
 
