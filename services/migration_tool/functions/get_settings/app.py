@@ -1,10 +1,10 @@
-
 from handler import MigrationHandler
 
 def handler(event, context):
 
-    setting = event["migration_setting"]
-
     migration_handler = MigrationHandler()
-    migration_handler.run(setting)
-    
+    migration_settings = migration_handler.get_settings()
+
+    return {
+        'migration_settings': migration_settings
+    }

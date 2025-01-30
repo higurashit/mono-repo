@@ -1,103 +1,51 @@
 {
   "Comment": "Migration Tool State Machine",
-  "StartAt": "DefineSourceData",
+  "StartAt": "GetSettings",
   "States": {
-    "DefineSourceData": {
+    "GetSettings": {
       "Type": "Task",
       "Resource": "${MGF1LambdaFunctionArn}",
-      "Next": "Parallel",
       "ResultSelector": {
-        "src_file_list.$": "$.src_file_list"
+        "settings.$": "$.settings"
       },
-      "ResultPath": "$.SourceData"
+      "ResultPath": "$.Migration",
+      "Next": "MergeDataBySetting"
     },
-    "Parallel": {
-      "Type": "Parallel",
-      "Next": "CreateMigrationData",
-      "Branches": [
-        {
-          "StartAt": "CheckSourceData",
-          "States": {
-            "CheckSourceData": {
-              "Type": "Map",
-              "Iterator": {
-                "StartAt": "CheckSourceDataExistence",
-                "States": {
-                  "CheckSourceDataExistence": {
-                    "Type": "Task",
-                    "Parameters": {
-                      "Bucket": "${MGS3BucketName}",
-                      "Key": "migrationTest.json"
-                    },
-                    "Resource": "arn:aws:states:::aws-sdk:s3:getObject",
-                    "Next": "ValidateSourceData"
-                  },
-                  "ValidateSourceData": {
-                    "Type": "Task",
-                    "Resource": "${MGF2LambdaFunctionArn}",
-                    "End": true
-                  }
-                }
-              },
-              "ItemsPath": "$.SourceData.src_file_list",
-              "End": true,
-              "ResultPath": null
-            }
-          }
-        },
-        {
-          "StartAt": "DefineMigrationData",
-          "States": {
-            "DefineMigrationData": {
-              "Type": "Task",
-              "Resource": "${MGF3LambdaFunctionArn}",
-              "ResultSelector": {
-                "migration_list.$": "$.migration_list"
-              },
-              "ResultPath": "$.MigrationData",
-              "End": true
-            }
-          }
-        }
-      ],
-      "ResultSelector": {
-        "migration_list.$": "$.[1].MigrationData.migration_list"
-      },
-      "ResultPath": "$.MigrationData"
-    },
-    "CreateMigrationData": {
+    "MergeDataBySetting": {
       "Type": "Map",
       "ItemProcessor": {
         "ProcessorConfig": {
           "Mode": "INLINE"
         },
-        "StartAt": "MergeData",
+        "StartAt": "Lambda Invoke",
         "States": {
-          "MergeData": {
+          "Lambda Invoke": {
             "Type": "Task",
-            "Resource": "${MGF4LambdaFunctionArn}",
-            "Next": "RemainSourceData"
-          },
-          "RemainSourceData": {
-            "Type": "Choice",
-            "Choices": [
+            "Resource": "${MGF2LambdaFunctionArn}",
+            "OutputPath": "$.Payload",
+            "Parameters": {
+              "Payload.$": "$"
+            },
+            "Retry": [
               {
-                "Variable": "$.continue",
-                "BooleanEquals": true,
-                "Next": "MergeData"
+                "ErrorEquals": [
+                  "Lambda.ServiceException",
+                  "Lambda.AWSLambdaException",
+                  "Lambda.SdkClientException",
+                  "Lambda.TooManyRequestsException"
+                ],
+                "IntervalSeconds": 1,
+                "MaxAttempts": 3,
+                "BackoffRate": 2,
+                "JitterStrategy": "FULL"
               }
             ],
-            "Default": "OutputData"
-          },
-          "OutputData": {
-            "Type": "Task",
-            "Resource": "${MGF5LambdaFunctionArn}",
             "End": true
           }
         }
       },
       "End": true,
-      "ItemsPath": "$.MigrationData.migration_list"
+      "ItemsPath": "$.Migration.settings"
     }
   }
 }

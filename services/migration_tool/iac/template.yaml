@@ -3,12 +3,12 @@ Transform: AWS::Serverless-2016-10-31
 
 Globals:
   Function:
-    Runtime: python3.9
+    Runtime: python3.12
     Handler: app.handler
     Architectures:
       - x86_64
-    Timeout: 10
-    MemorySize: 128
+    Timeout: 30
+    MemorySize: 256
     EphemeralStorage:
       Size: 512
 
@@ -33,20 +33,11 @@ Resources:
         MGS3BucketName: !Ref MGS3Bucket
         MGF1LambdaFunctionArn: !GetAtt MGF1LambdaFunction.Arn
         MGF2LambdaFunctionArn: !GetAtt MGF2LambdaFunction.Arn
-        MGF3LambdaFunctionArn: !GetAtt MGF3LambdaFunction.Arn
-        MGF4LambdaFunctionArn: !GetAtt MGF4LambdaFunction.Arn
-        MGF5LambdaFunctionArn: !GetAtt MGF5LambdaFunction.Arn
       Policies:
         - LambdaInvokePolicy:
             FunctionName: !Ref MGF1LambdaFunction
         - LambdaInvokePolicy:
             FunctionName: !Ref MGF2LambdaFunction
-        - LambdaInvokePolicy:
-            FunctionName: !Ref MGF3LambdaFunction
-        - LambdaInvokePolicy:
-            FunctionName: !Ref MGF4LambdaFunction
-        - LambdaInvokePolicy:
-            FunctionName: !Ref MGF5LambdaFunction
         - !Ref MGBasicIAMPolicyStateMachine
     DependsOn:
       - MGBasicIAMPolicyStateMachine
@@ -54,50 +45,22 @@ Resources:
   ################################
   # Lambda
   ################################
-  # define_src_data function
+  # get_settings function
   MGF1LambdaFunction:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: ../functions/define_src_data/
+      CodeUri: ../functions/get_settings/
       # Layers:
       #   - !Ref MyLayer
       Description: ''
       Role: !GetAtt MGBasicIAMRoleLambdaFunction.Arn
-      FunctionName: migration_tool_define_src_data
+      FunctionName: migration_tool_001_get_settings
       LoggingConfig:
         LogFormat: Text
-        LogGroup: /aws/lambda/migration_tool_define_src_data
-
-  # validate_src_data function
-  MGF2LambdaFunction:
-    Type: AWS::Serverless::Function
-    Properties:
-      CodeUri: ../functions/validate_src_data/
-      # Layers:
-      #   - !Ref MyLayer
-      Description: ''
-      Role: !GetAtt MGBasicIAMRoleLambdaFunction.Arn
-      FunctionName: migration_tool_validate_src_data
-      LoggingConfig:
-        LogFormat: Text
-        LogGroup: /aws/lambda/migration_tool_validate_src_data
-
-  # define_migration_settings function
-  MGF3LambdaFunction:
-    Type: AWS::Serverless::Function
-    Properties:
-      CodeUri: ../functions/define_migration_settings/
-      # Layers:
-      #   - !Ref MyLayer
-      Description: ''
-      Role: !GetAtt MGBasicIAMRoleLambdaFunction.Arn
-      FunctionName: migration_tool_define_migration_settings
-      LoggingConfig:
-        LogFormat: Text
-        LogGroup: /aws/lambda/migration_tool_define_migration_settings
+        LogGroup: /aws/lambda/migration_tool_001_get_settings
 
   # merge_data function
-  MGF4LambdaFunction:
+  MGF2LambdaFunction:
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: ../functions/merge_data/
@@ -105,24 +68,10 @@ Resources:
       #   - !Ref MyLayer
       Description: ''
       Role: !GetAtt MGBasicIAMRoleLambdaFunction.Arn
-      FunctionName: migration_tool_merge_data
+      FunctionName: migration_tool_002_merge_data
       LoggingConfig:
         LogFormat: Text
-        LogGroup: /aws/lambda/migration_tool_merge_data
-
-  # output_data function
-  MGF5LambdaFunction:
-    Type: AWS::Serverless::Function
-    Properties:
-      CodeUri: ../functions/output_data/
-      # Layers:
-      #   - !Ref MyLayer
-      Description: ''
-      Role: !GetAtt MGBasicIAMRoleLambdaFunction.Arn
-      FunctionName: migration_tool_output_data
-      LoggingConfig:
-        LogFormat: Text
-        LogGroup: /aws/lambda/migration_tool_output_data
+        LogGroup: /aws/lambda/migration_tool_002_merge_data
 
   ################################
   # IAM
