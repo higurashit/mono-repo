@@ -45,7 +45,7 @@
         }
       },
       "End": true,
-      "ItemsPath": "$.Migration.settings"
+      "ItemsPath": "$.Migration.targets"
     }
   }
 }

@@ -2,6 +2,9 @@
 *001_Aマスタ.xlsx*
 *002_Bマスタ.csv*
 
+# aws sam
+.aws-sam
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]

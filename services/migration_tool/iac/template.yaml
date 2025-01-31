@@ -12,18 +12,34 @@ Globals:
     EphemeralStorage:
       Size: 512
 
+Parameters:
+  Env:
+    Type: String
+    AllowedValues:
+      - local
+      - prd
+
+Mappings:
+  EnvMap:
+    local:
+      S3_BUCKET_NAME: siruko-cloudformation-templetes
+      WORK_DIR_KEY: migration-tool/unittest/
+
+Conditions:
+  IsLocal: !Equals [!Ref Env, local]
+
 Resources:
-  ################################
+  # ----------------------------------- #
   # S3 Bucket
-  ################################
+  # ----------------------------------- #
   MGS3Bucket:
     Type: AWS::S3::Bucket
     Properties:
       BucketName: migration-tool-bucket-777
 
-  ################################
+  # ----------------------------------- #
   # StateMachine
-  ################################
+  # ----------------------------------- #
   MGS1StateMachine:
     Type: AWS::Serverless::StateMachine
     Properties:
@@ -42,30 +58,51 @@ Resources:
     DependsOn:
       - MGBasicIAMPolicyStateMachine
 
-  ################################
+  # ----------------------------------- #
+  # Lambda Layers
+  # ----------------------------------- #
+  MigrationHandlerLayer:
+    Type: AWS::Serverless::LayerVersion
+    Properties:
+      LayerName: !Sub layer-migration-handler
+      ContentUri: ../layer/MigrationHandler
+      CompatibleRuntimes:
+        - python3.12
+    Metadata:
+      BuildMethod: python3.12
+
+  # ----------------------------------- #
   # Lambda
-  ################################
-  # get_settings function
+  # ----------------------------------- #
+  # get_targets function
   MGF1LambdaFunction:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: ../functions/get_settings/
-      # Layers:
-      #   - !Ref MyLayer
+      FunctionName: migration_tool_001_get_targets
+      CodeUri: ../functions/get_targets/
+      Layers:
+        - !Ref MigrationHandlerLayer
       Description: ''
+      Environment:
+        Variables:
+          BUCKET_NAME: !If [
+              IsLocal,
+              !FindInMap [EnvMap, !Ref Env, S3_BUCKET_NAME], # localは固定値
+              !Ref MGS3Bucket,
+            ]
+          WORK_DIR_KEY: !FindInMap [EnvMap, !Ref Env, WORK_DIR_KEY]
       Role: !GetAtt MGBasicIAMRoleLambdaFunction.Arn
-      FunctionName: migration_tool_001_get_settings
       LoggingConfig:
         LogFormat: Text
-        LogGroup: /aws/lambda/migration_tool_001_get_settings
+        LogGroup: /aws/lambda/migration_tool_001_get_targets
 
   # merge_data function
   MGF2LambdaFunction:
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: ../functions/merge_data/
-      # Layers:
-      #   - !Ref MyLayer
+      Layers:
+        - !Ref MigrationHandlerLayer
       Description: ''
       Role: !GetAtt MGBasicIAMRoleLambdaFunction.Arn
       FunctionName: migration_tool_002_merge_data
@@ -73,9 +110,9 @@ Resources:
         LogFormat: Text
         LogGroup: /aws/lambda/migration_tool_002_merge_data
 
-  ################################
+  # ----------------------------------- #
   # IAM
-  ################################
+  # ----------------------------------- #
   # Additional policy for statemachine
   MGBasicIAMPolicyStateMachine:
     Type: AWS::IAM::ManagedPolicy
@@ -133,5 +170,14 @@ Resources:
               - logs:CreateLogStream
               - logs:PutLogEvents
             Effect: Allow
+          - Action: s3:*
+            Effect: Allow
+            Resource:
+              - !Sub
+                - arn:aws:s3:::${BucketName}
+                - BucketName: !Ref MGS3Bucket
+              - !Sub
+                - arn:aws:s3:::${BucketName}/*
+                - BucketName: !Ref MGS3Bucket
       Roles: []
       Users: []
