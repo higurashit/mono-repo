@@ -1,8 +1,15 @@
+import boto3
 import polars as pl
 from decimal import Decimal
 from datetime import datetime
+from const import Constructor
 
-def read_excel(file_path: str):
+s3 = boto3.client('s3', region_name='ap-northeast-1')
+
+def read_excel(bucket_name, object_key, file_path):
+    # 移行定義Excelの取得
+    print(f'download [s3://{bucket_name}/{object_key}] to [{file_path}]')
+    s3.download_file(bucket_name, object_key, file_path)
     xlsx_list = pl.read_excel(file_path, sheet_id=0, has_header=False)
     xlsx_list.pop('一覧', None)  # 一覧シートを削除
     return xlsx_list
@@ -142,9 +149,14 @@ def get_src_definitions(config, xlsx, dst_definitions):
     
     return src_definitions
 
-def get_srcs_data(srcs):
+def get_srcs_data(bucket_name, object_path, local_directory_path, srcs):
   for src in srcs:
-    file_path = src["input"]["path"]
+    # ファイルをダウンロード
+    file_name = src["input"]["path"]
+    object_key = f'{object_path}{file_name}'
+    file_path = f'{local_directory_path}{file_name}'
+    print(f'download [s3://{bucket_name}{object_key}] to [{file_path}]')
+    s3.download_file(bucket_name, object_key, file_path)
 
     # 0埋め数字の0が取れてしまうため、すべてUtf8にキャスト
     schema_overrides = {f["name"]: pl.Utf8 for f in src["field_def"]}

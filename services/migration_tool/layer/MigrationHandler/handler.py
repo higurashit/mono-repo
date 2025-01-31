@@ -1,12 +1,20 @@
 import os
+import time
 from utils import time_log, check_lock_file, create_lock_file, delete_lock_file
 from reader import read_excel, read_definition, get_srcs_data
 from processor import initialize_dfs, check_datas, process_src_dfs, merge_dfs, set_default_values
 from writer import output_excel, output_csv
+from const import Constructor
+
+
 
 class MigrationHandler:
-    def __init__(self, file_path="移行定義FMT.xlsx"):
-        self.file_path = file_path
+    def __init__(self):
+        # 作業フォルダを作成
+        self.const = Constructor()
+        path = self.const.local_directory_path
+        os.makedirs(path, exist_ok=False)
+        print(f'create directory: {path}')
 
     def get_setting(self, sheetname):
         with time_log("[処理全体] 移行定義Excelの読み込みとループ用配列の生成処理"):
@@ -17,7 +25,11 @@ class MigrationHandler:
 
     def load_definitions(self):
         with time_log("[移行定義取得]"):
-            return read_excel(self.file_path)
+            return read_excel(
+                self.const.bucket_name,
+                self.const.definition_object_key,
+                self.const.local_definition_file_path
+            )
 
     def run(self, setting):
         with time_log("[処理全体] 移行データの作成処理"):
@@ -39,7 +51,12 @@ class MigrationHandler:
 
     def process_sources(self, srcs, dst):
         with time_log("[元データ-取得]"):
-            srcs = get_srcs_data(srcs)
+            srcs = get_srcs_data(
+                self.const.bucket_name,
+                self.const.object_path,
+                self.const.local_directory_path,
+                srcs
+            )
 
         with time_log("[元データ-初期化]"):
             srcs = initialize_dfs(srcs)

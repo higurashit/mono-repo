@@ -28,7 +28,7 @@
 ## step of test in local (by modify)
 - `sam build`
 - `sam local invoke MGF1LambdaFunction --parameter-overrides "Env=local"`
-- `sam local invoke MGF2LambdaFunction --parameter-overrides "Env=local" --event event_f2_ok_001.json`
+- `sam local invoke MGF2LambdaFunction --parameter-overrides "Env=local" --event ../tests/unit/event/event_f2_ok_001.json`
 
 ## 問題点
 遅い

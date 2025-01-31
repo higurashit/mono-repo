@@ -87,7 +87,7 @@ Resources:
         Variables:
           BUCKET_NAME: !If [
               IsLocal,
-              !FindInMap [EnvMap, !Ref Env, S3_BUCKET_NAME], # localは固定値
+              siruko-cloudformation-templetes, # localは固定値
               !Ref MGS3Bucket,
             ]
           WORK_DIR_KEY: !FindInMap [EnvMap, !Ref Env, WORK_DIR_KEY]
