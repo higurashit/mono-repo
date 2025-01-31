@@ -8,15 +8,12 @@ class MigrationHandler:
     def __init__(self, file_path="移行定義FMT.xlsx"):
         self.file_path = file_path
 
-    def get_settings(self):
+    def get_setting(self, sheetname):
         with time_log("[処理全体] 移行定義Excelの読み込みとループ用配列の生成処理"):
             xlsx_list = self.load_definitions()
 
-            settings = []
-            for key, value in xlsx_list.items():
-                setting = read_definition(key, value)
-                settings.append(setting)
-            return settings
+            setting = read_definition(sheetname, xlsx_list[sheetname])
+            return setting
 
     def load_definitions(self):
         with time_log("[移行定義取得]"):
