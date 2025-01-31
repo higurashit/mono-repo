@@ -5,8 +5,8 @@ from processor import initialize_dfs, check_datas, process_src_dfs, merge_dfs, s
 from writer import output_excel, output_csv
 
 class MigrationHandler:
-    def __init__(self):
-        self.file_path = "移行定義FMT.xlsx"
+    def __init__(self, file_path="移行定義FMT.xlsx"):
+        self.file_path = file_path
 
     def get_settings(self):
         with time_log("[処理全体] 移行定義Excelの読み込みとループ用配列の生成処理"):

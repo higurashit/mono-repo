@@ -1,4 +1,4 @@
 polars
 fastexcel
-pydentic
+pydantic
 openpyxl
