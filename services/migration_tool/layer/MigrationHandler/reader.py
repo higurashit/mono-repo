@@ -2,7 +2,6 @@ import boto3
 import polars as pl
 from decimal import Decimal
 from datetime import datetime
-from const import Constructor
 
 s3 = boto3.client('s3', region_name='ap-northeast-1')
 

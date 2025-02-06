@@ -25,6 +25,9 @@ def statemachine_handler():
         merge_data(event, context)
 
 
+
+
+# モジュール読み取り用のパス追加
 def append_paths():
     # 現在のパス
     pwd = os.path.dirname(__file__)
@@ -32,11 +35,12 @@ def append_paths():
     pwd_2up = fr'{pwd}/../../'
     sys.path.append(pwd_2up)
     print(f'append [{pwd_2up}] to path.')
-    # MigrationHandlerLayerのパスを探索パス二追加
+    # MigrationHandlerLayerのパスを探索パスに追加
     layer_path = fr'{pwd_2up}/layer/MigrationHandler'
     sys.path.append(layer_path)
     print(f'append [{layer_path}] to path.')
 
+# 試験用の環境変数設定
 def set_environs():
     # 環境変数の設定
     os.environ['BUCKET_NAME'] = 'siruko-cloudformation-templetes'

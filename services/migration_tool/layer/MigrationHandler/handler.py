@@ -1,6 +1,5 @@
 import os
-import time
-from utils import time_log, check_lock_file, create_lock_file, delete_lock_file
+from utils import time_log, create_lock_file, delete_lock_file
 from reader import read_excel, read_definition, get_srcs_data
 from processor import initialize_dfs, check_datas, process_src_dfs, merge_dfs, set_default_values
 from writer import output_excel, output_csv
@@ -38,16 +37,20 @@ class MigrationHandler:
 
     def process_data(self, dst, srcs):
         file_path = dst["output"]["path"]
-        lock_file = f"{file_path}.lock"
-        check_lock_file(lock_file)
-        create_lock_file(lock_file)
-
+        lock_file = f"{self.const.object_path}{file_path}.lock"
+        create_lock_file(
+            self.const.bucket_name,
+            lock_file
+        )
         try:
             srcs = self.process_sources(srcs, dst)
             dst["df"] = self.process_result(srcs, dst)
             self.output_result(dst)
         finally:
-            delete_lock_file(lock_file)
+            delete_lock_file(
+                self.const.bucket_name,
+                lock_file
+            )
 
     def process_sources(self, srcs, dst):
         with time_log("[元データ-取得]"):
