@@ -1,10 +1,14 @@
 import polars as pl
+import boto3
 from openpyxl import Workbook, load_workbook
 from processor import prepare_output_df
 
-def output_excel(dst):
+s3 = boto3.client('s3', region_name='ap-northeast-1')
+
+def output_excel(bucket_name, object_path, local_directory_path, dst):
     df = dst["df"]
-    file_path = dst["output"]["path"]
+    file_path = f'{local_directory_path}{dst["output"]["path"]}'
+    s3_file_path = f'{object_path}{dst["output"]["path"]}'
     
     # 元データをExcelに貼り付け
     title = f'元データ_{dst["data_name"]}'
@@ -36,6 +40,9 @@ def output_excel(dst):
     try:
       # Excelを保存
       wb.save(file_path)
+      print(f'Excelファイルを保存しました: {file_path}')
+      s3.upload_file(file_path, bucket_name, s3_file_path)
+      print(f'ExcelファイルをS3に保存しました: s3://{bucket_name}/{s3_file_path}')
     except PermissionError as pe:
       print(f'PermissionError: {file_path} に書き込みできません。ファイルを削除するか閉じてください。')
       raise pe
@@ -52,8 +59,9 @@ def ws_append(sheet_name, wb:Workbook, df:pl.DataFrame):
     
     return ws
 
-def output_csv(dst):
-    file_path = dst["output"]["path"]
+def output_csv(bucket_name, object_path, local_directory_path, dst):
+    file_path = f'{local_directory_path}{dst["output"]["path"]}'
+    s3_file_path = f'{object_path}{dst["output"]["path"]}'
     definition:pl.DataFrame = dst["definition"]
     columns = definition.columns
     # CSVは一番左の出力列（10列目）を採用
@@ -66,7 +74,13 @@ def output_csv(dst):
     # CSVはエイリアスを物理名で指定
     ret_df:pl.DataFrame = prepare_output_df(row_nums, col_names, aliases, dst)
 
-    # 定義に従って列順を変換して出力
-    # CSVに出力して保存
-    file_path = dst["output"]["path"]
-    ret_df.write_csv(file=file_path, separator=',')
+    try:
+      # 定義に従って列順を変換して出力
+      # CSVに出力して保存
+      ret_df.write_csv(file=file_path, separator=',')
+      print(f'CSVファイルを保存しました: {file_path}')
+      s3.upload_file(file_path, bucket_name, s3_file_path)
+      print(f'CSVファイルをS3に保存しました: s3://{bucket_name}{s3_file_path}')
+    except PermissionError as pe:
+      print(f'PermissionError: {file_path} に書き込みできません。ファイルを削除するか閉じてください。')
+      raise pe

@@ -83,8 +83,18 @@ class MigrationHandler:
 
         with time_log("[結果データ-ファイル出力]"):
             if dst["output"]["type"] == "xlsx":
-                output_excel(dst)
+                output_excel(
+                    self.const.bucket_name,
+                    self.const.object_path,
+                    self.const.local_directory_path,
+                    dst
+                )
             elif dst["output"]["type"] == "csv":
-                output_csv(dst)
+                output_csv(
+                    self.const.bucket_name,
+                    self.const.object_path,
+                    self.const.local_directory_path,
+                    dst
+                )
             else:
                 raise ValueError(f"出力形式が不明: {dst['output']['type']}")
