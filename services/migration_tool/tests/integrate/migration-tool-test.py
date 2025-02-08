@@ -36,7 +36,7 @@ def append_paths():
     sys.path.append(pwd_2up)
     print(f'append [{pwd_2up}] to path.')
     # MigrationHandlerLayerのパスを探索パスに追加
-    layer_path = fr'{pwd_2up}/layer/MigrationHandler'
+    layer_path = fr'{pwd_2up}/layers/MigrationHandler'
     sys.path.append(layer_path)
     print(f'append [{layer_path}] to path.')
 
