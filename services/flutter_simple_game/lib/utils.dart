@@ -17,3 +17,8 @@ int randomIntInArray(List<int> arr) {
 int randomPlusOrMinus() {
   return randomIntInArray([1, -1]);
 }
+
+randomChoice(List arr) {
+  int length = arr.length;
+  return arr[randomIntInRange(0, length - 1)];
+}

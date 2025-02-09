@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'simple_game.dart';
+import 'idle_game.dart';
 
 void main() {
   runApp(MyApp());
@@ -14,6 +15,7 @@ class MyApp extends StatelessWidget {
       home: TopPage(), // トップページを最初に表示
       routes: {
         '/simple_game': (context) => SimpleGame(), // ルートを登録
+        '/idle_game': (context) => IdleGame(), // ルートを登録
       },
     );
   }
@@ -35,7 +37,6 @@ class TopPage extends StatelessWidget {
               children: [
                 ElevatedButton(
                   onPressed: () {
-                    // ボタンが押された時、SimpleGame 画面に遷移
                     Navigator.pushNamed(context, '/simple_game');
                   },
                   child: Text('ボールゲームを始める'),
@@ -43,8 +44,7 @@ class TopPage extends StatelessWidget {
                 SizedBox(height: 20),
                 ElevatedButton(
                   onPressed: () {
-                    // ボタンが押された時、SimpleGame 画面に遷移
-                    Navigator.pushNamed(context, '/simple_game');
+                    Navigator.pushNamed(context, '/idle_game');
                   },
                   child: Text('放置ゲームを始める'),
                 ),

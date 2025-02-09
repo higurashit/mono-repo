@@ -1,12 +1,6 @@
 import 'package:flutter/material.dart';
 // import 'dart:developer' as dev;
-import 'dart:math' as math;
-
-var rand = math.Random();
-
-double randomInRange(double min, double max) {
-  return min + rand.nextDouble() * (max - min);
-}
+import 'utils.dart';
 
 class IdleGame extends StatefulWidget {
   const IdleGame({super.key});
@@ -16,10 +10,8 @@ class IdleGame extends StatefulWidget {
 }
 
 class _IdleGameState extends State<IdleGame> {
-  double ballX = 0.0; // ボールの位置X
-  double ballY = 0.0; // ボールの位置Y
-  double ballSpeedX = 0.01; // X方向の速度
-  double ballSpeedY = 0.01;
+  List<String> moneyIcons = ['💰️', '💲', '💴', '💵', '💶', '💷'];
+  String money = '';
 
   @override
   void initState() {
@@ -27,28 +19,13 @@ class _IdleGameState extends State<IdleGame> {
 
     // ゲームの更新処理
     Future.doWhile(() async {
-      // 毎フレームごとにボールの位置を更新
+      // 毎フレームごとにお金がたまる
       if (mounted) {
         setState(() {
-          ballX += ballSpeedX;
-          ballY += ballSpeedY;
-
-          // 壁に当たった場合、反射させる
-          if (ballX + 0.15 >= 1 || ballX <= -1) {
-            ballSpeedX = -ballSpeedX;
-            int positionY = rand.nextBool() ? 1 : -1;
-            ballSpeedY = ballSpeedY + randomInRange(0, 0.01) * positionY;
-            // print("$ballSpeedX $ballSpeedY");
-          }
-          if (ballY + 0.15 >= 1 || ballY <= -1) {
-            ballSpeedY = -ballSpeedY;
-            int positionX = rand.nextBool() ? 1 : -1;
-            ballSpeedX = ballSpeedX + randomInRange(0, 0.01) * positionX;
-            // print("$ballSpeedX $ballSpeedY");
-          }
+          money += randomChoice(moneyIcons);
         });
       }
-      await Future.delayed(Duration(milliseconds: 16)); // 60fpsに近い更新
+      await Future.delayed(Duration(milliseconds: 160)); // 6fpsに近い更新
       return true;
     });
   }
@@ -56,21 +33,7 @@ class _IdleGameState extends State<IdleGame> {
   void _speedUpCounter() {
     if (mounted) {
       setState(() {
-        // This call to setState tells the Flutter framework that something has
-        // changed in this State, which causes it to rerun the build method below
-        // so that the display can reflect the updated values. If we changed
-        // _counter without calling setState(), then the build method would not be
-        // called again, and so nothing would appear to happen.
-        if (ballSpeedX < 0) {
-          ballSpeedX -= 0.01;
-        } else {
-          ballSpeedX += 0.01;
-        }
-        if (ballSpeedY < 0) {
-          ballSpeedY -= 0.01;
-        } else {
-          ballSpeedY += 0.01;
-        }
+        money += randomChoice(moneyIcons);
       });
     }
   }
@@ -80,7 +43,7 @@ class _IdleGameState extends State<IdleGame> {
     return MaterialApp(
       home: Scaffold(
         appBar: AppBar(
-          title: Text('Simple Game'),
+          title: Text('Idle Game'),
           leading: IconButton(
             icon: Icon(Icons.arrow_back), // 戻るアイコン
             onPressed: () {
@@ -88,28 +51,13 @@ class _IdleGameState extends State<IdleGame> {
             },
           ),
         ),
-        body: Center(
-          child: Container(
-            width: 300,
-            height: 300,
-            decoration: BoxDecoration(
-              border: Border.all(color: Colors.black),
-            ),
-            child: Stack(
-              children: [
-                Positioned(
-                  left: (ballX + 1) * 150, // 画面の中央を基準に位置
-                  top: (ballY + 1) * 150,
-                  child: Container(
-                    width: 20,
-                    height: 20,
-                    decoration: BoxDecoration(
-                      color: Colors.red,
-                      shape: BoxShape.circle,
-                    ),
-                  ),
-                ),
-              ],
+        body: Align(
+          alignment: Alignment.topLeft, // 左上に配置
+          child: Padding(
+            padding: const EdgeInsets.all(10.0), // 少し余白をつける
+            child: Text(
+              money,
+              style: TextStyle(fontSize: 24),
             ),
           ),
         ),
