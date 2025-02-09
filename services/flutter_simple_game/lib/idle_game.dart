@@ -1,14 +1,21 @@
 import 'package:flutter/material.dart';
-import 'utils.dart';
+// import 'dart:developer' as dev;
+import 'dart:math' as math;
 
-class SimpleGame extends StatefulWidget {
-  const SimpleGame({super.key});
+var rand = math.Random();
 
-  @override
-  _SimpleGameState createState() => _SimpleGameState();
+double randomInRange(double min, double max) {
+  return min + rand.nextDouble() * (max - min);
 }
 
-class _SimpleGameState extends State<SimpleGame> {
+class IdleGame extends StatefulWidget {
+  const IdleGame({super.key});
+
+  @override
+  _IdleGameState createState() => _IdleGameState();
+}
+
+class _IdleGameState extends State<IdleGame> {
   double ballX = 0.0; // ボールの位置X
   double ballY = 0.0; // ボールの位置Y
   double ballSpeedX = 0.01; // X方向の速度
@@ -29,14 +36,14 @@ class _SimpleGameState extends State<SimpleGame> {
           // 壁に当たった場合、反射させる
           if (ballX + 0.15 >= 1 || ballX <= -1) {
             ballSpeedX = -ballSpeedX;
-            ballSpeedY =
-                ballSpeedY + randomInRange(0, 0.01) * randomPlusOrMinus();
+            int positionY = rand.nextBool() ? 1 : -1;
+            ballSpeedY = ballSpeedY + randomInRange(0, 0.01) * positionY;
             // print("$ballSpeedX $ballSpeedY");
           }
           if (ballY + 0.15 >= 1 || ballY <= -1) {
             ballSpeedY = -ballSpeedY;
-            ballSpeedX =
-                ballSpeedX + randomInRange(0, 0.01) * randomPlusOrMinus();
+            int positionX = rand.nextBool() ? 1 : -1;
+            ballSpeedX = ballSpeedX + randomInRange(0, 0.01) * positionX;
             // print("$ballSpeedX $ballSpeedY");
           }
         });

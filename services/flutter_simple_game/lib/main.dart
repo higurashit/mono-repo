@@ -25,18 +25,30 @@ class TopPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text('トップページ'),
-      ),
-      body: Center(
-        child: ElevatedButton(
-          onPressed: () {
-            // ボタンが押された時、SimpleGame 画面に遷移
-            Navigator.pushNamed(context, '/simple_game');
-          },
-          child: Text('ゲームを始める'),
+        appBar: AppBar(
+          title: Text('トップページ'),
         ),
-      ),
-    );
+        body: Center(
+          child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                ElevatedButton(
+                  onPressed: () {
+                    // ボタンが押された時、SimpleGame 画面に遷移
+                    Navigator.pushNamed(context, '/simple_game');
+                  },
+                  child: Text('ボールゲームを始める'),
+                ),
+                SizedBox(height: 20),
+                ElevatedButton(
+                  onPressed: () {
+                    // ボタンが押された時、SimpleGame 画面に遷移
+                    Navigator.pushNamed(context, '/simple_game');
+                  },
+                  child: Text('放置ゲームを始める'),
+                ),
+              ]),
+        ));
   }
 }
