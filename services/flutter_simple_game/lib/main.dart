@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'simple_game.dart';
 import 'idle_game.dart';
+import 'merge_game.dart';
 
 void main() {
   runApp(MyApp());
@@ -16,6 +17,7 @@ class MyApp extends StatelessWidget {
       routes: {
         '/simple_game': (context) => SimpleGame(), // ルートを登録
         '/idle_game': (context) => IdleGame(), // ルートを登録
+        '/merge_game': (context) => MergeGame(), // ルートを登録
       },
     );
   }
@@ -47,6 +49,13 @@ class TopPage extends StatelessWidget {
                     Navigator.pushNamed(context, '/idle_game');
                   },
                   child: Text('放置ゲームを始める'),
+                ),
+                SizedBox(height: 20),
+                ElevatedButton(
+                  onPressed: () {
+                    Navigator.pushNamed(context, '/merge_game');
+                  },
+                  child: Text('マージゲームを始める'),
                 ),
               ]),
         ));
