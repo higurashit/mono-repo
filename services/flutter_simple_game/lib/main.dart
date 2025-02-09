@@ -3,6 +3,8 @@ import 'simple_game.dart';
 import 'idle_game.dart';
 import 'merge_game.dart';
 import 'drag_game.dart';
+// import 'drag_game2.dart';
+import 'merge_game2.dart';
 
 void main() {
   runApp(MyApp());
@@ -20,6 +22,8 @@ class MyApp extends StatelessWidget {
         '/idle_game': (context) => IdleGame(), // ルートを登録
         '/merge_game': (context) => MergeGame(), // ルートを登録
         '/drag_game': (context) => DragGame(), // ルートを登録
+        // '/drag_game2': (context) => DragGame2(), // ルートを登録
+        '/merge_game2': (context) => MergeGame2(), // ルートを登録
       },
     );
   }
@@ -65,6 +69,20 @@ class TopPage extends StatelessWidget {
                     Navigator.pushNamed(context, '/drag_game');
                   },
                   child: Text('ドラッグゲームを始める'),
+                ),
+                SizedBox(height: 20),
+                // ElevatedButton(
+                //   onPressed: () {
+                //     Navigator.pushNamed(context, '/drag_game2');
+                //   },
+                //   child: Text('ドラッグゲーム2を始める'),
+                // ),
+                // SizedBox(height: 20),
+                ElevatedButton(
+                  onPressed: () {
+                    Navigator.pushNamed(context, '/merge_game2');
+                  },
+                  child: Text('手動マージゲームを始める'),
                 ),
               ]),
         ));
