@@ -98,7 +98,7 @@ class _MergeGameState extends State<MergeGame> {
     return MaterialApp(
       home: Scaffold(
         appBar: AppBar(
-          title: Text('Idle Game'),
+          title: Text('Auto Merge Game'),
           leading: IconButton(
             icon: Icon(Icons.arrow_back), // 戻るアイコン
             onPressed: () {
