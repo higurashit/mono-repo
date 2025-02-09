@@ -2,32 +2,22 @@ import 'package:flutter/material.dart';
 // import 'dart:developer' as dev;
 import 'utils.dart';
 
-class DragGame extends StatelessWidget {
+class DragGame extends StatefulWidget {
   const DragGame({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      home: DragBoxExample(),
-    );
-  }
+  _DragGameState createState() => _DragGameState();
 }
 
-class DragBoxExample extends StatefulWidget {
-  const DragBoxExample({super.key});
-
-  @override
-  _DragBoxExampleState createState() => _DragBoxExampleState();
-}
-
-class _DragBoxExampleState extends State<DragBoxExample> {
+class _DragGameState extends State<DragGame> {
   double x = 100;
   double y = 100;
   Color color = Colors.green;
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return MaterialApp(
+        home: Scaffold(
       appBar: AppBar(
         title: Text('Drag Game'),
         leading: IconButton(
@@ -63,6 +53,6 @@ class _DragBoxExampleState extends State<DragBoxExample> {
           ),
         ],
       ),
-    );
+    ));
   }
 }
