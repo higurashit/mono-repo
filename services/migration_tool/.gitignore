@@ -1,6 +1,7 @@
 # output/lock file in tests
 *001_Aマスタ.xlsx*
 *002_Bマスタ.csv*
+~*xlsx
 
 # aws sam
 .aws-sam

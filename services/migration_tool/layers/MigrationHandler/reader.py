@@ -1,14 +1,23 @@
 import boto3
 import polars as pl
+import os
+import shutil
 from decimal import Decimal
 from datetime import datetime
+from utils import is_local
 
 s3 = boto3.client('s3', region_name='ap-northeast-1')
 
 def read_excel(bucket_name, object_key, file_path):
     # 移行定義Excelの取得
-    print(f'download [s3://{bucket_name}/{object_key}] to [{file_path}]')
-    s3.download_file(bucket_name, object_key, file_path)
+    if is_local():
+      pwd = os.path.dirname(__file__)
+      src_file_path = fr'{pwd}/../../tests/unit/data/移行定義FMT.xlsx'
+      print(f'copy [{src_file_path}] to [{file_path}]') 
+      shutil.copy(src_file_path, file_path)
+    else:
+      print(f'download [s3://{bucket_name}/{object_key}] to [{file_path}]')
+      s3.download_file(bucket_name, object_key, file_path)
     xlsx_list = pl.read_excel(file_path, sheet_id=0, has_header=False)
     xlsx_list.pop('一覧', None)  # 一覧シートを削除
     return xlsx_list
