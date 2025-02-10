@@ -1,4 +1,8 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- for LocationGame  -->
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
+    <!-- /for LocationGame  -->
     <application
         android:label="flutter_simple_game"
         android:name="${applicationName}"
@@ -30,6 +34,14 @@
         <meta-data
             android:name="flutterEmbedding"
             android:value="2" />
+        <!-- for LocationGame  -->
+        <meta-data
+            android:name="com.google.android.gms.version"
+            android:value="@integer/google_play_services_version"/>
+        <meta-data
+            android:name="com.google.android.geo.API_KEY"
+            android:value="AIzaSyA3FTyTc4xmaXi2QgkQOBfXhPKLPS_E5a0"/>
+        <!-- /for LocationGame  -->
     </application>
     <!-- Required to query activities that can process text, see:
          https://developer.android.com/training/package-visibility and

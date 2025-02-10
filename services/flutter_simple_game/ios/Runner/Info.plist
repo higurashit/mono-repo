@@ -2,6 +2,12 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<!-- for LocationGame -->
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>位置情報を使用してマップを表示します</string>
+	<key>NSLocationAlwaysUsageDescription</key>
+	<string>位置情報を常に使用する必要があります</string>
+	<!-- /for LocationGame -->
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>
