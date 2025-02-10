@@ -1,9 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/flutter_svg.dart';
-import 'package:flutter/services.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:geolocator/geolocator.dart';
-import 'package:permission_handler/permission_handler.dart';
 import 'utils.dart';
 
 class LocationGame extends StatefulWidget {
@@ -69,28 +66,108 @@ class _LocationGameState extends State<LocationGame> {
     });
   }
 
+  void _roulette() async {
+    // ランダムな位置にマーカーを追加
+    LatLng randomPosition = getRandomLatLng(
+      position: _currentPosition,
+      ratio: 5,
+    );
+    // カメラを移動
+    await mapController.animateCamera(
+      CameraUpdate.newLatLng(randomPosition),
+    );
+    // マーカーを移動
+    setState(() {
+      _markers = {
+        Marker(
+          markerId: MarkerId('random_marker'),
+          position: randomPosition,
+          icon: _markerIcon,
+        )
+      };
+    });
+  }
+
+  Future<void> _onPressMyLocation() async {
+    // 権限をリクエスト
+    LocationPermission permission = await Geolocator.requestPermission();
+
+    if (permission == LocationPermission.always ||
+        permission == LocationPermission.whileInUse) {
+      // 現在地を取得
+      Position position = await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.high, // 高精度で取得
+      );
+      LatLng latLng = LatLng(position.latitude, position.longitude);
+
+      // カメラを移動
+      await mapController.animateCamera(
+        CameraUpdate.newLatLng(latLng),
+      );
+
+      // マーカーを移動
+      setState(() {
+        _markers = {
+          Marker(
+            markerId: MarkerId('random_marker'),
+            position: latLng,
+            icon: _markerIcon,
+          )
+        };
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text('Location Game'),
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back), // 戻るアイコン
-          onPressed: () {
-            Navigator.pop(context); // トップページに戻る
-          },
+        appBar: AppBar(
+          title: Text('Location Game'),
+          leading: IconButton(
+            icon: Icon(Icons.arrow_back), // 戻るアイコン
+            onPressed: () {
+              Navigator.pop(context); // トップページに戻る
+            },
+          ),
         ),
-      ),
-      body: GoogleMap(
-        initialCameraPosition: CameraPosition(
-          target: _currentPosition,
-          zoom: 14.0,
+        body: Stack(
+          children: [
+            GoogleMap(
+              initialCameraPosition: CameraPosition(
+                target: _currentPosition,
+                zoom: 13.0,
+              ),
+              markers: _markers,
+              onMapCreated: _onMapCreated,
+              onCameraMove: _onCameraMove,
+              myLocationEnabled: false, // 現在地機能を利用しない
+              scrollGesturesEnabled: false, // スクロール無効
+              zoomGesturesEnabled: false, // ズーム無効
+              rotateGesturesEnabled: false, // 回転無効
+              tiltGesturesEnabled: false, // 傾き無効
+            ),
+            Positioned(
+              top: 20, // 上から20ピクセル
+              right: 20, // 右から20ピクセル
+              child: SizedBox(
+                  width: 48,
+                  height: 48,
+                  child: FloatingActionButton(
+                    mini: true,
+                    onPressed: _onPressMyLocation,
+                    backgroundColor: const Color.fromARGB(127, 81, 83, 85),
+                    child:
+                        Icon(Icons.my_location, size: 24, color: Colors.white),
+                  )),
+            ),
+          ],
         ),
-        markers: _markers,
-        onMapCreated: _onMapCreated,
-        onCameraMove: _onCameraMove,
-        myLocationEnabled: true, // 現在地マーカーを表示
-      ),
-    );
+        floatingActionButton: FloatingActionButton(
+          onPressed: _roulette,
+          tooltip: 'Are you LUCKY??',
+          backgroundColor: Colors.blue,
+          child: const Icon(Icons.casino, size: 32, color: Colors.white),
+        ),
+        floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat);
   }
 }

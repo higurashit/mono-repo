@@ -31,6 +31,8 @@ dependencies:
   flutter:
     sdk: flutter
   # for LocationGame
+  flutter_localizations:
+    sdk: flutter
   google_maps_flutter: ^2.10.0
   geolocator: ^13.0.2
   permission_handler: ^11.3.1

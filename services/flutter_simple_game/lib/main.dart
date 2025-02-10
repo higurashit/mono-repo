@@ -1,3 +1,4 @@
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter/material.dart';
 import 'simple_game.dart';
 import 'idle_game.dart';
@@ -26,6 +27,14 @@ class MyApp extends StatelessWidget {
         '/merge_game2': (context) => MergeGame2(),
         '/location_game': (context) => LocationGame(),
       },
+      locale: Locale('ja', 'JP'), // 日本語に設定
+      supportedLocales: [
+        Locale('en', 'US'),
+      ],
+      localizationsDelegates: [
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+      ],
     );
   }
 }

@@ -1,4 +1,5 @@
 import 'dart:math' as math;
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 
 var rand = math.Random();
 
@@ -22,3 +23,12 @@ randomChoice(List arr) {
   int length = arr.length;
   return arr[randomIntInRange(0, length - 1)];
 }
+
+// ランダムな位置を取得する
+LatLng getRandomLatLng({required LatLng position, int ratio = 1}) {
+  double randomLat =
+      position.latitude + (rand.nextDouble() - 0.5) * 0.01 * ratio;
+  double randomLng =
+      position.longitude + (rand.nextDouble() - 0.5) * 0.01 * ratio;
+  return LatLng(randomLat, randomLng);
+} // LatLng(35.681236 + (random.nextDouble() - 0.5) * 0.01, 139.767125 + (random.nextDouble() - 0.5) * 0.01<

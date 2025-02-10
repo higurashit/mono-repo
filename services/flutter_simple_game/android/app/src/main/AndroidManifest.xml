@@ -41,6 +41,9 @@
         <meta-data
             android:name="com.google.android.geo.API_KEY"
             android:value="AIzaSyA3FTyTc4xmaXi2QgkQOBfXhPKLPS_E5a0"/>
+        <meta-data
+            android:name="com.google.android.gms.maps.LANGUAGE"
+            android:value="ja" />
         <!-- /for LocationGame  -->
     </application>
     <!-- Required to query activities that can process text, see:
