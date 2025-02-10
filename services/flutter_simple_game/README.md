@@ -22,6 +22,10 @@ A new Flutter project.
 - emulator -avd my_avd
 - flutter run # エミュレータ起動中はエミュレータで動作する
 
+# Create APK file
+- flutter build apk --release
+- create apk-file to `build/app/outputs/flutter-apk/app-release.apk`
+
 ## Getting Started
 
 This project is a starting point for a Flutter application.
