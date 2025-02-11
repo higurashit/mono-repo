@@ -12,8 +12,9 @@ class LocationGame extends StatefulWidget {
   _LocationGameState createState() => _LocationGameState();
 }
 
-class _LocationGameState extends State<LocationGame> {
-  late GoogleMapController mapController;
+class _LocationGameState extends State<LocationGame>
+    with SingleTickerProviderStateMixin {
+  late GoogleMapController _mapController;
   late final Set<Marker> _markers = {};
   final double _initialZoom = 13.0;
   late BitmapDescriptor _markerIcon;
@@ -34,11 +35,28 @@ class _LocationGameState extends State<LocationGame> {
   // final int _durationMilliseconds = 100;
   bool _isGoal = true;
   bool _isLoading = false;
+  // roulette
+  late AnimationController _controller;
+  late Animation<double> _animation;
+  bool _isSpinning = false;
+  double _arrowAngle = 0.0;
+  late final double _rouletteTopPosition = 0;
+  late final double _rouletteLeftPosition = 0;
 
   @override
   void initState() {
     super.initState();
     _loadMarkerIcon(_myLocationIconLeft);
+    _controller = AnimationController(
+      vsync: this,
+      duration: Duration(seconds: 3),
+    )..addListener(() {
+        setState(() {
+          _arrowAngle = _controller.value * 2 * pi; // 0〜360度を回転
+        });
+      });
+
+    _animation = Tween<double>(begin: 0, end: 1).animate(_controller);
   }
 
   // 画像を読み込む
@@ -51,7 +69,7 @@ class _LocationGameState extends State<LocationGame> {
 
   // 地図が作成された後の動作
   void _onMapCreated(GoogleMapController controller) async {
-    mapController = controller;
+    _mapController = controller;
     // 目的地の設定とマーカーの設定
     _setTargetDestination(_currentDestinationName);
     // 中央位置にマーカーを設定する
@@ -74,7 +92,7 @@ class _LocationGameState extends State<LocationGame> {
         _currentDisplayDistance = _displayDistance(_currentDestinationDistance);
 
         double zoom = _calculateZoom(_currentDestinationDistance);
-        mapController
+        _mapController
             .animateCamera(CameraUpdate.newLatLngZoom(_currentPosition, zoom));
         _markers.add(Marker(
           markerId: MarkerId(_currentDestinationName!),
@@ -143,7 +161,7 @@ class _LocationGameState extends State<LocationGame> {
 
   // 中央位置にマーカーを設定する
   void _setCenterMarker() async {
-    LatLngBounds bounds = await mapController.getVisibleRegion();
+    LatLngBounds bounds = await _mapController.getVisibleRegion();
     LatLng center = LatLng(
       (bounds.northeast.latitude + bounds.southwest.latitude) / 2,
       (bounds.northeast.longitude + bounds.southwest.longitude) / 2,
@@ -180,42 +198,111 @@ class _LocationGameState extends State<LocationGame> {
 
   // サイコロアイコン押下時
   void _roulette() async {
+    // ゴール中の場合
     if (_isGoal) {
+      // 次の目的地を設定
       _setTargetDestination(_currentDestinationName);
       return;
     }
-    // ランダムな位置にマーカーを追加
-    int ratio = (_currentDestinationDistance! / 2000).toInt();
-    if (ratio < 1) {
-      ratio = 1;
+    // ルーレットが回っている場合
+    print('moving: $_isSpinning');
+    if (_isSpinning) {
+      // ルーレットをストップ
+      _controller.stop();
+
+      // 矢印の方向のランダムな位置にマーカーを追加
+      LatLng randomPosition = _moveInDirection(_arrowAngle);
+      // カメラを移動
+      changeMyLocationIcon(_currentPosition, randomPosition);
+      double distance =
+          _calculateDistance(randomPosition, _currentDestinationLocation!);
+      double zoom = _calculateZoom(distance);
+      await _mapController.animateCamera(
+        CameraUpdate.newLatLngZoom(randomPosition, zoom),
+      );
+      setState(() {
+        _currentPosition = randomPosition;
+        _currentDestinationDistance = distance;
+        _cullentDestinationBearing =
+            _calculateBearing(_currentPosition, _currentDestinationLocation!);
+        _currentDisplayDistance = _displayDistance(_currentDestinationDistance);
+        // ゴール時
+        if (_isGoal) {
+          _mapController.animateCamera(
+            CameraUpdate.newLatLngZoom(_currentDestinationLocation!, 18),
+          );
+          _currentPosition = _currentDestinationLocation!;
+        }
+      });
+    } else {
+      _controller.repeat();
     }
-    LatLng randomPosition = getNearRandomLatLng(
-      _currentPosition,
-      _currentDestinationLocation!,
-      ratio: ratio,
-    );
-    // カメラを移動
-    changeMyLocationIcon(_currentPosition, randomPosition);
-    double distance =
-        _calculateDistance(randomPosition, _currentDestinationLocation!);
-    double zoom = _calculateZoom(distance);
-    await mapController.animateCamera(
-      CameraUpdate.newLatLngZoom(randomPosition, zoom),
-    );
+
     setState(() {
-      _currentPosition = randomPosition;
-      _currentDestinationDistance = distance;
-      _cullentDestinationBearing =
-          _calculateBearing(_currentPosition, _currentDestinationLocation!);
-      _currentDisplayDistance = _displayDistance(_currentDestinationDistance);
-      // ゴール時
-      if (_isGoal) {
-        mapController.animateCamera(
-          CameraUpdate.newLatLngZoom(_currentDestinationLocation!, 18),
-        );
-        _currentPosition = _currentDestinationLocation!;
-      }
+      _isSpinning = !_isSpinning;
     });
+    return;
+
+    // _isSpinning = true;
+    // double rotateSpeed = 1000; // 1秒で1周
+    // final int counter = 16; // 16等分で表示
+    // double baseHeight = MediaQuery.of(context).size.height / 2 - 50;
+    // double baseWidth = MediaQuery.of(context).size.width / 2 - 25;
+    // int count = 0;
+    // Future.doWhile(() async {
+    //   if (!_isSpinning) {
+    //     return false;
+    //   }
+    //   // 毎フレームごとに数字が増える
+    //   if (mounted) {
+    //     // 現在の位置
+    //     int now = count % counter;
+    //     setState(() {
+    //       //
+    //       // switch (now) {
+    //       //   case 0:
+    //       //     _rouletteTopPosition = baseHeight - 120;
+    //       //     _rouletteLeftPosition = baseWidth;
+    //       //     break;
+    //       //   case 4:
+    //       //     _rouletteTopPosition = baseHeight - 65;
+    //       //     _rouletteLeftPosition = baseWidth + 50;
+    //       //     break;
+    //       //   case 8:
+    //       //     _rouletteTopPosition = baseHeight - 50;
+    //       //     _rouletteLeftPosition = baseWidth;
+    //       //     break;
+    //       //   case 12:
+    //       //     _rouletteTopPosition = baseHeight - 65;
+    //       //     _rouletteLeftPosition = baseWidth - 50;
+    //       //     break;
+    //       //   default:
+    //       // }
+    //       _rouletteTopPosition = baseHeight;
+    //       _rouletteTopPosition = baseWidth;
+    //     });
+    //     count++;
+    //     print(
+    //         'now: $now, top: $_rouletteTopPosition, left: $_rouletteLeftPosition');
+    //   }
+    //   await Future.delayed(
+    //       Duration(milliseconds: (rotateSpeed / counter).toInt()));
+    //   return true;
+    // });
+  }
+
+  LatLng _moveInDirection(double angle) {
+    // ランダムな距離を決定
+    double distance = randomInRange(
+        _currentDestinationDistance! / 100, _currentDestinationDistance! * 2);
+    double distanceInDegrees = distance / 111320; // 1度 ≈ 111.32km
+
+    // 進む方向を計算
+    double newLat = _currentPosition.latitude + distanceInDegrees * cos(angle);
+    double newLng = _currentPosition.longitude + distanceInDegrees * sin(angle);
+    LatLng newPosition = LatLng(newLat, newLng);
+
+    return newPosition;
   }
 
   // 現在地アイコン押下時
@@ -238,7 +325,7 @@ class _LocationGameState extends State<LocationGame> {
       changeMyLocationIcon(_currentPosition, latLng);
       double distance = _calculateDistance(_currentPosition, latLng);
       double zoom = _calculateZoom(distance);
-      await mapController.animateCamera(
+      await _mapController.animateCamera(
         CameraUpdate.newLatLngZoom(latLng, zoom),
       );
       setState(() {
@@ -262,6 +349,7 @@ class _LocationGameState extends State<LocationGame> {
         ),
       ),
       body: Stack(children: [
+        // 地図レイヤ
         GoogleMap(
           initialCameraPosition: CameraPosition(
             target: _currentPosition,
@@ -277,7 +365,7 @@ class _LocationGameState extends State<LocationGame> {
           rotateGesturesEnabled: false, // 回転無効
           tiltGesturesEnabled: false, // 傾き無効
         ),
-        // 目的地の情報表示
+        // 目的地の情報表示レイヤ
         if (_currentDestinationName != null &&
             _currentDisplayDistance != null) ...[
           Positioned(
@@ -355,11 +443,22 @@ class _LocationGameState extends State<LocationGame> {
                     onPressed: _roulette,
                     tooltip: 'Are you LUCKY??',
                     backgroundColor: const Color.fromARGB(222, 33, 150, 243),
-                    child:
-                        const Icon(Icons.casino, size: 32, color: Colors.white),
+                    child: Icon(_isSpinning ? Icons.stop : Icons.casino,
+                        size: 32, color: Colors.white),
                   ),
                 ))),
-        // オーバーレイとローディングアイコン
+        // 回転矢印ボタン
+        Positioned(
+            top: MediaQuery.of(context).size.height / 2 - 50,
+            left: MediaQuery.of(context).size.width / 2 - 25,
+            child: Transform.rotate(
+                angle: _arrowAngle,
+                child: Icon(
+                  Icons.keyboard_double_arrow_up,
+                  size: 50,
+                  color: const Color.fromARGB(124, 201, 43, 43),
+                ))),
+        // オーバーレイとローディングアイコン（最上段）
         if (_isLoading) ...[
           // 背景を薄い黒にする
           Container(
