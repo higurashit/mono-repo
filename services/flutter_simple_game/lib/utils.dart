@@ -30,5 +30,7 @@ LatLng getRandomLatLng({required LatLng position, int ratio = 1}) {
       position.latitude + (rand.nextDouble() - 0.5) * 0.01 * ratio;
   double randomLng =
       position.longitude + (rand.nextDouble() - 0.5) * 0.01 * ratio;
+  // print("position : $position");
+  // print("randomLat: $randomLat, randomLng: $randomLng");
   return LatLng(randomLat, randomLng);
-} // LatLng(35.681236 + (random.nextDouble() - 0.5) * 0.01, 139.767125 + (random.nextDouble() - 0.5) * 0.01<
+}

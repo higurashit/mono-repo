@@ -65,7 +65,10 @@ flutter:
 
   # for LocationGames
   assets:
-    - assets/location_game-user_icon.png
+    - assets/location_game-user_icon1.png
+    - assets/location_game-user_icon2.png
+    - assets/location_game-loading_icon1.png
+    - assets/location_game-loading_icon2.png
 
   # To add assets to your application, add an assets section, like this:
   # assets:
