@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:google_places_flutter/google_places_flutter.dart';
 import 'package:geolocator/geolocator.dart';
 import 'dart:math';
 import 'utils.dart';
@@ -14,12 +16,15 @@ class LocationGame extends StatefulWidget {
 
 class _LocationGameState extends State<LocationGame>
     with SingleTickerProviderStateMixin {
+  // map
   late GoogleMapController _mapController;
   late final Set<Marker> _markers = {};
   final double _initialZoom = 13.0;
+  // Icon
   late BitmapDescriptor _markerIcon;
   final String _myLocationIconLeft = 'assets/location_game-user_icon1.png';
   final String _myLocationIconRight = 'assets/location_game-user_icon2.png';
+  // destination
   final List<Map<String, dynamic>> _destinations = [
     {'name': '渋谷駅', 'location': LatLng(35.658033, 139.701635)},
     {'name': '東京タワー', 'location': LatLng(35.6585805, 139.7454329)},
@@ -35,11 +40,15 @@ class _LocationGameState extends State<LocationGame>
   final double goalDistance = 500; // 500mまで近づいたらゴール
   bool _isGoal = false;
   bool _isLoading = false;
+  bool _isMapCreateing = false;
   // roulette
   late AnimationController _controller;
   late Animation<double> _animation;
   bool _isSpinning = false;
   double _arrowAngle = 0.0;
+  // ramen
+  String mapsApiKey = dotenv.env['GOOGLE_MAPS_API_KEY'] ?? '';
+  String placesApiKey = dotenv.env['GOOGLE_PLACES_API_KEY'] ?? '';
 
   @override
   void initState() {
@@ -67,6 +76,9 @@ class _LocationGameState extends State<LocationGame>
 
   // 地図が作成された後の動作
   void _onMapCreated(GoogleMapController controller) async {
+    setState(() {
+      _isMapCreateing = true;
+    });
     _mapController = controller;
     // 目的地の設定とマーカーの設定
     _setTargetDestination(_currentDestinationName);
@@ -237,32 +249,6 @@ class _LocationGameState extends State<LocationGame>
     return newPosition;
   }
 
-  // 現在地アイコン押下時
-  void _onPressMyLocation() async {
-    // 権限をリクエスト
-    LocationPermission permission = await Geolocator.requestPermission();
-
-    if (permission == LocationPermission.always ||
-        permission == LocationPermission.whileInUse) {
-      setState(() {
-        _isLoading = true;
-      });
-      // 現在地を取得
-      Position position = await Geolocator.getCurrentPosition(
-        desiredAccuracy: LocationAccuracy.high, // 高精度で取得
-      );
-      LatLng latLng = LatLng(position.latitude, position.longitude);
-
-      // 移動
-      _changePosition(latLng);
-
-      // ロード中表示を解除
-      setState(() {
-        _isLoading = false;
-      });
-    }
-  }
-
   // 移動
   void _changePosition(LatLng newPosition) async {
     // カメラを移動
@@ -307,6 +293,58 @@ class _LocationGameState extends State<LocationGame>
     return false;
   }
 
+  // 現在地アイコン押下時
+  void _onPressMyLocation() async {
+    // 権限をリクエスト
+    LocationPermission permission = await Geolocator.requestPermission();
+
+    if (permission == LocationPermission.always ||
+        permission == LocationPermission.whileInUse) {
+      setState(() {
+        _isLoading = true;
+      });
+      // 現在地を取得
+      Position position = await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.high, // 高精度で取得
+      );
+      LatLng latLng = LatLng(position.latitude, position.longitude);
+
+      // 移動
+      _changePosition(latLng);
+
+      // ロード中表示を解除
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
+
+  // ラーメンアイコン押下時
+  void _onPressRamenSearch() async {
+    // 権限をリクエスト
+    LocationPermission permission = await Geolocator.requestPermission();
+
+    if (permission == LocationPermission.always ||
+        permission == LocationPermission.whileInUse) {
+      setState(() {
+        _isLoading = true;
+      });
+      // 現在地を取得
+      Position position = await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.high, // 高精度で取得
+      );
+      LatLng latLng = LatLng(position.latitude, position.longitude);
+
+      // 移動
+      _changePosition(latLng);
+
+      // ロード中表示を解除
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
+
   // 画面レイアウト
   @override
   Widget build(BuildContext context) {
@@ -341,7 +379,7 @@ class _LocationGameState extends State<LocationGame>
         if (_currentDestinationName != null &&
             _currentDisplayDistance != null) ...[
           Positioned(
-            top: MediaQuery.of(context).size.height * 0.1, // 画面の1/4の位置
+            top: MediaQuery.of(context).size.height * 0.1 - 20, // 画面の1/4の位置
             left: 20,
             right: 20,
             child: Stack(
@@ -409,7 +447,7 @@ class _LocationGameState extends State<LocationGame>
               height: 48,
               child: FloatingActionButton(
                 heroTag: "ramenSearch",
-                onPressed: _onPressMyLocation,
+                onPressed: _onPressRamenSearch,
                 backgroundColor: const Color.fromARGB(127, 81, 83, 85),
                 child: Icon(Icons.ramen_dining, size: 24, color: Colors.white),
               )),
@@ -436,16 +474,18 @@ class _LocationGameState extends State<LocationGame>
                   ),
                 ))),
         // 回転矢印ボタン
-        Positioned(
-            top: MediaQuery.of(context).size.height / 2 - 50,
-            left: MediaQuery.of(context).size.width / 2 - 25,
-            child: Transform.rotate(
-                angle: _arrowAngle,
-                child: Icon(
-                  Icons.keyboard_double_arrow_up,
-                  size: 50,
-                  color: const Color.fromARGB(222, 201, 43, 43),
-                ))),
+        if (!_isMapCreateing) ...[
+          Positioned(
+              top: MediaQuery.of(context).size.height / 2 - 70,
+              left: MediaQuery.of(context).size.width / 2 - 25,
+              child: Transform.rotate(
+                  angle: _arrowAngle,
+                  child: Icon(
+                    Icons.keyboard_double_arrow_up,
+                    size: 50,
+                    color: const Color.fromARGB(222, 201, 43, 43),
+                  )))
+        ],
         // オーバーレイとローディングアイコン（最上段）
         if (_isLoading) ...[
           // 背景を薄い黒にする

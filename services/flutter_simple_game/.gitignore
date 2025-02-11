@@ -1,3 +1,6 @@
+# 環境依存
+.env
+
 # Miscellaneous
 *.class
 *.log

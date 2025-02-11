@@ -1,5 +1,6 @@
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'simple_game.dart';
 import 'idle_game.dart';
 import 'merge_game.dart';
@@ -7,7 +8,9 @@ import 'drag_game.dart';
 import 'merge_game2.dart';
 import 'location_game.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await dotenv.load(fileName: ".env");
   runApp(MyApp());
 }
 
