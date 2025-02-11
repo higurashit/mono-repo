@@ -32,7 +32,8 @@ class _LocationGameState extends State<LocationGame>
   double? _currentDestinationDistance;
   double? _cullentDestinationBearing;
   String? _currentDisplayDistance;
-  bool _isGoal = true;
+  final double goalDistance = 500; // 500mまで近づいたらゴール
+  bool _isGoal = false;
   bool _isLoading = false;
   // roulette
   late AnimationController _controller;
@@ -123,16 +124,14 @@ class _LocationGameState extends State<LocationGame>
 
   // 距離の表示
   String _displayDistance(double? distance) {
-    _isGoal = false;
-    if (distance == null) {
-      return '';
-    } else if (distance > 2000) {
+    if (distance == null) return '';
+    if (_isGoal) return 'ゴール !!';
+
+    // 距離に応じてkm/m表記を変える
+    if (distance > 2000) {
       return '距離: ${(distance / 1000).toStringAsFixed(2)} km';
-    } else if (distance > 500) {
-      return '距離: ${distance.toStringAsFixed(2)} m';
     } else {
-      _isGoal = true;
-      return 'ゴール !!';
+      return '距離: ${distance.toStringAsFixed(2)} m';
     }
   }
 
@@ -197,6 +196,9 @@ class _LocationGameState extends State<LocationGame>
   void _roulette() async {
     // ゴール中の場合
     if (_isGoal) {
+      setState(() {
+        _isGoal = false;
+      });
       // 次の目的地を設定
       _setTargetDestination(_currentDestinationName);
       return;
@@ -206,30 +208,11 @@ class _LocationGameState extends State<LocationGame>
       // ルーレットをストップ
       _controller.stop();
 
-      // 矢印の方向のランダムな位置にマーカーを追加
+      // 矢印の方向のランダムな位置を取得
       LatLng randomPosition = _moveInDirection(_arrowAngle);
-      // カメラを移動
-      changeMyLocationIcon(_currentPosition, randomPosition);
-      double distance =
-          _calculateDistance(randomPosition, _currentDestinationLocation!);
-      double zoom = _calculateZoom(distance);
-      await _mapController.animateCamera(
-        CameraUpdate.newLatLngZoom(randomPosition, zoom),
-      );
-      setState(() {
-        _currentPosition = randomPosition;
-        _currentDestinationDistance = distance;
-        _cullentDestinationBearing =
-            _calculateBearing(_currentPosition, _currentDestinationLocation!);
-        _currentDisplayDistance = _displayDistance(_currentDestinationDistance);
-        // ゴール時は目的地まで移動する
-        if (_isGoal) {
-          _mapController.animateCamera(
-            CameraUpdate.newLatLngZoom(_currentDestinationLocation!, 18),
-          );
-          _currentPosition = _currentDestinationLocation!;
-        }
-      });
+
+      // 移動
+      _changePosition(randomPosition);
     } else {
       _controller.repeat();
     }
@@ -270,18 +253,58 @@ class _LocationGameState extends State<LocationGame>
       );
       LatLng latLng = LatLng(position.latitude, position.longitude);
 
-      // カメラを移動
-      changeMyLocationIcon(_currentPosition, latLng);
-      double distance = _calculateDistance(_currentPosition, latLng);
-      double zoom = _calculateZoom(distance);
-      await _mapController.animateCamera(
-        CameraUpdate.newLatLngZoom(latLng, zoom),
-      );
+      // 移動
+      _changePosition(latLng);
+
+      // ロード中表示を解除
       setState(() {
-        _currentPosition = latLng;
         _isLoading = false;
       });
     }
+  }
+
+  // 移動
+  void _changePosition(LatLng newPosition) async {
+    // カメラを移動
+    changeMyLocationIcon(_currentPosition, newPosition);
+    double distance =
+        _calculateDistance(newPosition, _currentDestinationLocation!);
+    double zoom = _calculateZoom(distance);
+    await _mapController.animateCamera(
+      CameraUpdate.newLatLngZoom(newPosition, zoom),
+    );
+
+    setState(() {
+      // 現在地を更新
+      _currentPosition = newPosition;
+      // 目的地までの距離を更新
+      _currentDestinationDistance = distance;
+      // ゴール判定
+      _isGoal = _checkGoal(_currentDestinationDistance);
+      // 目的地までの方角を更新
+      _cullentDestinationBearing =
+          _calculateBearing(_currentPosition, _currentDestinationLocation!);
+      // 画面表示内容を取得
+      _currentDisplayDistance = _displayDistance(_currentDestinationDistance);
+      // ゴール時は目的地まで移動する
+      if (_isGoal) {
+        _mapController.animateCamera(
+          CameraUpdate.newLatLngZoom(_currentDestinationLocation!, 18),
+        );
+        _currentPosition = _currentDestinationLocation!;
+      }
+    });
+  }
+
+  // ゴールしたかどうかを判定
+  bool _checkGoal(double? distance) {
+    if (distance == null) {
+      return false;
+    }
+    if (distance < goalDistance) {
+      return true;
+    }
+    return false;
   }
 
   // 画面レイアウト
@@ -366,7 +389,7 @@ class _LocationGameState extends State<LocationGame>
         // 位置情報ボタン
         Positioned(
           top: 20,
-          right: 20,
+          right: 80,
           child: SizedBox(
               width: 48,
               height: 48,
@@ -375,6 +398,20 @@ class _LocationGameState extends State<LocationGame>
                 onPressed: _onPressMyLocation,
                 backgroundColor: const Color.fromARGB(127, 81, 83, 85),
                 child: Icon(Icons.my_location, size: 24, color: Colors.white),
+              )),
+        ),
+        // ラーメン検索ボタン
+        Positioned(
+          top: 20,
+          right: 20,
+          child: SizedBox(
+              width: 48,
+              height: 48,
+              child: FloatingActionButton(
+                heroTag: "ramenSearch",
+                onPressed: _onPressMyLocation,
+                backgroundColor: const Color.fromARGB(127, 81, 83, 85),
+                child: Icon(Icons.ramen_dining, size: 24, color: Colors.white),
               )),
         ),
         // サイコロボタン
@@ -418,11 +455,24 @@ class _LocationGameState extends State<LocationGame>
             height: double.infinity,
           ),
           // アイコンを画面中央に配置
-          Center(
-            child: CupertinoActivityIndicator(
-              radius: 32,
-              color: Colors.white,
-            ), // ローディングアイコン
+          Stack(
+            children: [
+              Positioned(
+                  top: MediaQuery.of(context).size.height / 2, // 少し上
+                  left: 0,
+                  right: 0,
+                  child: Center(
+                      child: Text(
+                    '現在地に移動中...',
+                    style: TextStyle(color: Colors.white, fontSize: 18),
+                  ))),
+              Center(
+                child: CupertinoActivityIndicator(
+                  radius: 32,
+                  color: Colors.white,
+                ), // ローディングアイコン
+              )
+            ],
           ),
         ],
       ]),
