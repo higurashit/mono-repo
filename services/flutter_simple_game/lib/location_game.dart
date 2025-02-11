@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:geolocator/geolocator.dart';
+import 'dart:math';
 import 'utils.dart';
 
 class LocationGame extends StatefulWidget {
@@ -21,13 +22,14 @@ class _LocationGameState extends State<LocationGame> {
   final List<Map<String, dynamic>> _destinations = [
     {'name': '渋谷駅', 'location': LatLng(35.658033, 139.701635)},
     {'name': '東京タワー', 'location': LatLng(35.6585805, 139.7454329)},
-    {'name': 'スカイツリー', 'location': LatLng(35.710063, 139.8107)},
-    {'name': '大阪城', 'location': LatLng(34.6873, 135.5259)},
+    {'name': 'スカイツリー', 'location': LatLng(35.710063, 139.810700)},
+    {'name': '大阪城', 'location': LatLng(34.687300, 135.525900)},
   ];
   LatLng _currentPosition = LatLng(35.681236, 139.767125); // 初期位置（東京駅）
   String? _currentDestinationName;
   LatLng? _currentDestinationLocation;
   double? _currentDestinationDistance;
+  double? _cullentDestinationBearing;
   String? _currentDisplayDistance;
   // final int _durationMilliseconds = 100;
   bool _isGoal = true;
@@ -67,6 +69,8 @@ class _LocationGameState extends State<LocationGame> {
         _currentDestinationLocation = targetDest['location'];
         _currentDestinationDistance =
             _calculateDistance(_currentPosition, _currentDestinationLocation!);
+        _cullentDestinationBearing =
+            _calculateBearing(_currentPosition, _currentDestinationLocation!);
         _currentDisplayDistance = _displayDistance(_currentDestinationDistance);
 
         double zoom = _calculateZoom(_currentDestinationDistance);
@@ -91,19 +95,27 @@ class _LocationGameState extends State<LocationGame> {
     );
   }
 
+  // 2点間の角度を計算（0-360）
+  double _calculateBearing(LatLng from, LatLng to) {
+    // 返される角度は0〜360度の範囲で、0度が北、90度が東、180度が南、270度が西を示します。
+    return Geolocator.bearingBetween(
+      from.latitude,
+      from.longitude,
+      to.latitude,
+      to.longitude,
+    );
+  }
+
   // 距離の表示
   String _displayDistance(double? distance) {
     _isGoal = false;
     if (distance == null) {
-      return '∞';
+      return '';
     } else if (distance > 2000) {
-      print('distance > 2000: $distance');
-      return '${(distance / 1000).toStringAsFixed(2)} km';
+      return '距離: ${(distance / 1000).toStringAsFixed(2)} km';
     } else if (distance > 500) {
-      print('distance > 500: $distance');
-      return '${distance.toStringAsFixed(2)} m';
+      return '距離: ${distance.toStringAsFixed(2)} m';
     } else {
-      print('distance <= 500: $distance');
       _isGoal = true;
       return 'ゴール !!';
     }
@@ -193,6 +205,8 @@ class _LocationGameState extends State<LocationGame> {
     setState(() {
       _currentPosition = randomPosition;
       _currentDestinationDistance = distance;
+      _cullentDestinationBearing =
+          _calculateBearing(_currentPosition, _currentDestinationLocation!);
       _currentDisplayDistance = _displayDistance(_currentDestinationDistance);
       // ゴール時
       if (_isGoal) {
@@ -270,26 +284,45 @@ class _LocationGameState extends State<LocationGame> {
             top: MediaQuery.of(context).size.height * 0.1, // 画面の1/4の位置
             left: 20,
             right: 20,
-            child: Container(
-              padding: EdgeInsets.symmetric(vertical: 10, horizontal: 20),
-              decoration: BoxDecoration(
-                color: Colors.black.withOpacity(0.6), // 半透明背景
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    "目的地: $_currentDestinationName",
-                    style: TextStyle(color: Colors.white, fontSize: 18),
-                  ),
-                  SizedBox(height: 5),
-                  Text(
-                    "距離: $_currentDisplayDistance",
-                    style: TextStyle(color: Colors.white, fontSize: 16),
-                  ),
-                ],
-              ),
+            child: Stack(
+              children: [
+                Container(
+                    padding: EdgeInsets.symmetric(vertical: 10, horizontal: 20),
+                    decoration: BoxDecoration(
+                      color: Colors.black.withOpacity(0.6), // 半透明背景
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    alignment: Alignment.center,
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          "目的地: $_currentDestinationName",
+                          style: TextStyle(color: Colors.white, fontSize: 18),
+                        ),
+                        SizedBox(height: 3),
+                        Text(
+                          _currentDisplayDistance!,
+                          style: TextStyle(color: Colors.white, fontSize: 16),
+                        ),
+                      ],
+                    )),
+                !_isGoal && _cullentDestinationBearing != null
+                    ? Positioned(
+                        top: 12,
+                        left: 20,
+                        child: Transform.rotate(
+                          angle: (_cullentDestinationBearing! - 90) *
+                              pi /
+                              180, // ラジアンに変換
+                          child: Icon(
+                            Icons.arrow_forward,
+                            size: 50,
+                            color: const Color.fromARGB(200, 255, 255, 255),
+                          ),
+                        ))
+                    : SizedBox.shrink(),
+              ],
             ),
           )
         ],
