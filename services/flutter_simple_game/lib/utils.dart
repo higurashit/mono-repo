@@ -25,11 +25,30 @@ randomChoice(List arr) {
 }
 
 // ランダムな位置を取得する
-LatLng getRandomLatLng({required LatLng position, int ratio = 1}) {
+LatLng getRandomLatLng(LatLng position, {int ratio = 1}) {
   double randomLat =
       position.latitude + (rand.nextDouble() - 0.5) * 0.01 * ratio;
   double randomLng =
       position.longitude + (rand.nextDouble() - 0.5) * 0.01 * ratio;
+  // print("position : $position");
+  // print("randomLat: $randomLat, randomLng: $randomLng");
+  return LatLng(randomLat, randomLng);
+}
+
+// ターゲットに近づけるようなランダムな位置を取得する
+LatLng getNearRandomLatLng(LatLng position, LatLng target, {int ratio = 1}) {
+  int latitudeFactor = 1;
+  int longitudeFactor = 1;
+  if (target.latitude < position.latitude) {
+    latitudeFactor = -1;
+  }
+  if (target.longitude < position.longitude) {
+    longitudeFactor = -1;
+  }
+  double randomLat = position.latitude +
+      (rand.nextDouble() / 0.5) * 0.01 * ratio * latitudeFactor;
+  double randomLng = position.longitude +
+      (rand.nextDouble() / 0.5) * 0.01 * ratio * longitudeFactor;
   // print("position : $position");
   // print("randomLat: $randomLat, randomLng: $randomLng");
   return LatLng(randomLat, randomLng);
