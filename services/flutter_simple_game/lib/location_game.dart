@@ -32,7 +32,6 @@ class _LocationGameState extends State<LocationGame>
   double? _currentDestinationDistance;
   double? _cullentDestinationBearing;
   String? _currentDisplayDistance;
-  // final int _durationMilliseconds = 100;
   bool _isGoal = true;
   bool _isLoading = false;
   // roulette
@@ -40,8 +39,6 @@ class _LocationGameState extends State<LocationGame>
   late Animation<double> _animation;
   bool _isSpinning = false;
   double _arrowAngle = 0.0;
-  late final double _rouletteTopPosition = 0;
-  late final double _rouletteLeftPosition = 0;
 
   @override
   void initState() {
@@ -49,7 +46,7 @@ class _LocationGameState extends State<LocationGame>
     _loadMarkerIcon(_myLocationIconLeft);
     _controller = AnimationController(
       vsync: this,
-      duration: Duration(seconds: 3),
+      duration: Duration(seconds: 2), // 2秒で1周
     )..addListener(() {
         setState(() {
           _arrowAngle = _controller.value * 2 * pi; // 0〜360度を回転
@@ -205,7 +202,6 @@ class _LocationGameState extends State<LocationGame>
       return;
     }
     // ルーレットが回っている場合
-    print('moving: $_isSpinning');
     if (_isSpinning) {
       // ルーレットをストップ
       _controller.stop();
@@ -226,7 +222,7 @@ class _LocationGameState extends State<LocationGame>
         _cullentDestinationBearing =
             _calculateBearing(_currentPosition, _currentDestinationLocation!);
         _currentDisplayDistance = _displayDistance(_currentDestinationDistance);
-        // ゴール時
+        // ゴール時は目的地まで移動する
         if (_isGoal) {
           _mapController.animateCamera(
             CameraUpdate.newLatLngZoom(_currentDestinationLocation!, 18),
@@ -242,59 +238,12 @@ class _LocationGameState extends State<LocationGame>
       _isSpinning = !_isSpinning;
     });
     return;
-
-    // _isSpinning = true;
-    // double rotateSpeed = 1000; // 1秒で1周
-    // final int counter = 16; // 16等分で表示
-    // double baseHeight = MediaQuery.of(context).size.height / 2 - 50;
-    // double baseWidth = MediaQuery.of(context).size.width / 2 - 25;
-    // int count = 0;
-    // Future.doWhile(() async {
-    //   if (!_isSpinning) {
-    //     return false;
-    //   }
-    //   // 毎フレームごとに数字が増える
-    //   if (mounted) {
-    //     // 現在の位置
-    //     int now = count % counter;
-    //     setState(() {
-    //       //
-    //       // switch (now) {
-    //       //   case 0:
-    //       //     _rouletteTopPosition = baseHeight - 120;
-    //       //     _rouletteLeftPosition = baseWidth;
-    //       //     break;
-    //       //   case 4:
-    //       //     _rouletteTopPosition = baseHeight - 65;
-    //       //     _rouletteLeftPosition = baseWidth + 50;
-    //       //     break;
-    //       //   case 8:
-    //       //     _rouletteTopPosition = baseHeight - 50;
-    //       //     _rouletteLeftPosition = baseWidth;
-    //       //     break;
-    //       //   case 12:
-    //       //     _rouletteTopPosition = baseHeight - 65;
-    //       //     _rouletteLeftPosition = baseWidth - 50;
-    //       //     break;
-    //       //   default:
-    //       // }
-    //       _rouletteTopPosition = baseHeight;
-    //       _rouletteTopPosition = baseWidth;
-    //     });
-    //     count++;
-    //     print(
-    //         'now: $now, top: $_rouletteTopPosition, left: $_rouletteLeftPosition');
-    //   }
-    //   await Future.delayed(
-    //       Duration(milliseconds: (rotateSpeed / counter).toInt()));
-    //   return true;
-    // });
   }
 
   LatLng _moveInDirection(double angle) {
-    // ランダムな距離を決定
+    // ランダムな距離を決定（目的地までの0.1倍～1.5倍までがランダムで決定）
     double distance = randomInRange(
-        _currentDestinationDistance! / 100, _currentDestinationDistance! * 2);
+        _currentDestinationDistance! / 10, _currentDestinationDistance! * 1.5);
     double distanceInDegrees = distance / 111320; // 1度 ≈ 111.32km
 
     // 進む方向を計算
@@ -436,15 +385,17 @@ class _LocationGameState extends State<LocationGame>
             child: Align(
                 alignment: Alignment.center,
                 child: SizedBox(
-                  width: 64,
-                  height: 56,
+                  width: 96,
+                  height: 84,
                   child: FloatingActionButton(
                     heroTag: "roulette",
                     onPressed: _roulette,
                     tooltip: 'Are you LUCKY??',
-                    backgroundColor: const Color.fromARGB(222, 33, 150, 243),
+                    backgroundColor: _isSpinning
+                        ? const Color.fromARGB(168, 243, 33, 82)
+                        : const Color.fromARGB(168, 33, 150, 243),
                     child: Icon(_isSpinning ? Icons.stop : Icons.casino,
-                        size: 32, color: Colors.white),
+                        size: 50, color: Colors.white),
                   ),
                 ))),
         // 回転矢印ボタン
@@ -456,7 +407,7 @@ class _LocationGameState extends State<LocationGame>
                 child: Icon(
                   Icons.keyboard_double_arrow_up,
                   size: 50,
-                  color: const Color.fromARGB(124, 201, 43, 43),
+                  color: const Color.fromARGB(222, 201, 43, 43),
                 ))),
         // オーバーレイとローディングアイコン（最上段）
         if (_isLoading) ...[
