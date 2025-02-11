@@ -19,9 +19,18 @@ int randomPlusOrMinus() {
   return randomIntInArray([1, -1]);
 }
 
+bool randomBool() {
+  return randomChoice([true, false]);
+}
+
 randomChoice(List arr) {
   int length = arr.length;
-  return arr[randomIntInRange(0, length - 1)];
+  // 要素が0, 1の場合
+  if (length == 0) return null;
+  if (length == 1) return arr[0];
+  // 要素が2以上の場合
+  int target = randomIntInRange(0, length - 1);
+  return arr[target];
 }
 
 // ランダムな位置を取得する

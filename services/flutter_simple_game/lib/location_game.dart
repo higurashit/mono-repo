@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:google_places_flutter/google_places_flutter.dart';
+import 'package:http/http.dart' as http;
 import 'package:geolocator/geolocator.dart';
 import 'dart:math';
+import 'dart:convert';
 import 'utils.dart';
 
 class LocationGame extends StatefulWidget {
@@ -40,15 +43,18 @@ class _LocationGameState extends State<LocationGame>
   final double goalDistance = 500; // 500mまで近づいたらゴール
   bool _isGoal = false;
   bool _isLoading = false;
-  bool _isMapCreateing = false;
+  String _loadingMessage = '';
+  bool _isMapCreated = false;
   // roulette
   late AnimationController _controller;
   late Animation<double> _animation;
   bool _isSpinning = false;
   double _arrowAngle = 0.0;
   // ramen
-  String mapsApiKey = dotenv.env['GOOGLE_MAPS_API_KEY'] ?? '';
-  String placesApiKey = dotenv.env['GOOGLE_PLACES_API_KEY'] ?? '';
+  final String _mapsApiKey = dotenv.env['GOOGLE_MAPS_API_KEY'] ?? '';
+  final String _placesApiKey = dotenv.env['GOOGLE_PLACES_API_KEY'] ?? '';
+  var _nearByRamenShop = {};
+  bool _isOpenRamenModal = false;
 
   @override
   void initState() {
@@ -76,14 +82,15 @@ class _LocationGameState extends State<LocationGame>
 
   // 地図が作成された後の動作
   void _onMapCreated(GoogleMapController controller) async {
-    setState(() {
-      _isMapCreateing = true;
-    });
     _mapController = controller;
     // 目的地の設定とマーカーの設定
     _setTargetDestination(_currentDestinationName);
     // 中央位置にマーカーを設定する
     _setCenterMarker();
+    // 地図の用意が完了
+    setState(() {
+      _isMapCreated = true;
+    });
   }
 
   // 目的地の設定とマーカーの設定
@@ -147,6 +154,7 @@ class _LocationGameState extends State<LocationGame>
     }
   }
 
+  // ズーム倍率の計算
   double _calculateZoom(double? distance) {
     if (distance == null) return 12.0;
 
@@ -235,6 +243,7 @@ class _LocationGameState extends State<LocationGame>
     return;
   }
 
+  // 方位を元にランダムで進む先のpositionを設定
   LatLng _moveInDirection(double angle) {
     // ランダムな距離を決定（目的地までの0.1倍～1.5倍までがランダムで決定）
     double distance = randomInRange(
@@ -250,12 +259,17 @@ class _LocationGameState extends State<LocationGame>
   }
 
   // 移動
-  void _changePosition(LatLng newPosition) async {
+  void _changePosition(LatLng newPosition,
+      {double? forceZoom, bool isNoGoalMoving = false}) async {
     // カメラを移動
     changeMyLocationIcon(_currentPosition, newPosition);
     double distance =
         _calculateDistance(newPosition, _currentDestinationLocation!);
     double zoom = _calculateZoom(distance);
+    // 強制ズームがONの場合
+    if (forceZoom != null) {
+      zoom = forceZoom;
+    }
     await _mapController.animateCamera(
       CameraUpdate.newLatLngZoom(newPosition, zoom),
     );
@@ -266,7 +280,9 @@ class _LocationGameState extends State<LocationGame>
       // 目的地までの距離を更新
       _currentDestinationDistance = distance;
       // ゴール判定
-      _isGoal = _checkGoal(_currentDestinationDistance);
+      if (!isNoGoalMoving) {
+        _isGoal = _checkGoal(_currentDestinationDistance);
+      }
       // 目的地までの方角を更新
       _cullentDestinationBearing =
           _calculateBearing(_currentPosition, _currentDestinationLocation!);
@@ -278,6 +294,10 @@ class _LocationGameState extends State<LocationGame>
           CameraUpdate.newLatLngZoom(_currentDestinationLocation!, 18),
         );
         _currentPosition = _currentDestinationLocation!;
+        // 1/2でラーメンを探す
+        // if (randomBool()) {
+        //   _fetchNearbyRamenShop(_currentPosition);
+        // }
       }
     });
   }
@@ -301,6 +321,7 @@ class _LocationGameState extends State<LocationGame>
     if (permission == LocationPermission.always ||
         permission == LocationPermission.whileInUse) {
       setState(() {
+        _loadingMessage = '現在地に移動しています...';
         _isLoading = true;
       });
       // 現在地を取得
@@ -319,29 +340,70 @@ class _LocationGameState extends State<LocationGame>
     }
   }
 
-  // ラーメンアイコン押下時
-  void _onPressRamenSearch() async {
-    // 権限をリクエスト
-    LocationPermission permission = await Geolocator.requestPermission();
+  // 指定位置近くのラーメンショップを検索
+  Future<void> _fetchNearbyRamenShop(LatLng position,
+      {int radius = 100}) async {
+    setState(() {
+      _loadingMessage = 'ラーメン屋を探しています...';
+      _isLoading = true;
+    });
+    // 現在位置地を取得
+    double latitude = position.latitude;
+    double longitude = position.longitude;
 
-    if (permission == LocationPermission.always ||
-        permission == LocationPermission.whileInUse) {
+    // Google Places APIのエンドポイント
+    final String url =
+        "https://maps.googleapis.com/maps/api/place/nearbysearch/json"
+        "?location=$latitude,$longitude"
+        "&language=ja"
+        "&radius=$radius" // 半径100m以内
+        "&type=restaurant" // レストランを検索
+        "&keyword=ラーメン屋" // キーワード "ラーメン"
+        "&key=$_placesApiKey";
+
+    // APIリクエストを送信
+    final response = await http.get(Uri.parse(url));
+
+    if (response.statusCode == 200) {
+      final data = json.decode(response.body);
+      List<dynamic> results = data['results'];
+      // 0件の場合
+      if (results.isEmpty) {
+        if (radius < 10000) {
+          setState(() {
+            _loadingMessage = '広範囲のラーメン屋を探しています...';
+          });
+          _fetchNearbyRamenShop(position, radius: radius * 10);
+        }
+        // ロード中表示を解除
+        setState(() {
+          _isLoading = false;
+        });
+        return;
+      }
+      // 1件を取得して表示
+      var shop = randomChoice(results);
+      shop['radiusText'] = '(検索範囲: 半径 $radius m以内)';
       setState(() {
-        _isLoading = true;
+        _nearByRamenShop = shop;
+        _isOpenRamenModal = true;
       });
-      // 現在地を取得
-      Position position = await Geolocator.getCurrentPosition(
-        desiredAccuracy: LocationAccuracy.high, // 高精度で取得
-      );
-      LatLng latLng = LatLng(position.latitude, position.longitude);
-
-      // 移動
-      _changePosition(latLng);
-
+    } else {
+      print("APIエラー: ${response.statusCode}");
       // ロード中表示を解除
       setState(() {
         _isLoading = false;
       });
+    }
+  }
+
+  // URLを開く
+  Future<void> _launchURL(String url) async {
+    final Uri uri = Uri.parse(url);
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    } else {
+      throw 'Could not launch $url';
     }
   }
 
@@ -379,7 +441,7 @@ class _LocationGameState extends State<LocationGame>
         if (_currentDestinationName != null &&
             _currentDisplayDistance != null) ...[
           Positioned(
-            top: MediaQuery.of(context).size.height * 0.1 - 20, // 画面の1/4の位置
+            top: MediaQuery.of(context).size.height * 0.1 + 20, // 画面の1/4の位置
             left: 20,
             right: 20,
             child: Stack(
@@ -447,7 +509,7 @@ class _LocationGameState extends State<LocationGame>
               height: 48,
               child: FloatingActionButton(
                 heroTag: "ramenSearch",
-                onPressed: _onPressRamenSearch,
+                onPressed: () => _fetchNearbyRamenShop(_currentPosition),
                 backgroundColor: const Color.fromARGB(127, 81, 83, 85),
                 child: Icon(Icons.ramen_dining, size: 24, color: Colors.white),
               )),
@@ -474,9 +536,9 @@ class _LocationGameState extends State<LocationGame>
                   ),
                 ))),
         // 回転矢印ボタン
-        if (!_isMapCreateing) ...[
+        if (_isMapCreated) ...[
           Positioned(
-              top: MediaQuery.of(context).size.height / 2 - 70,
+              top: MediaQuery.of(context).size.height / 2 - 40,
               left: MediaQuery.of(context).size.width / 2 - 25,
               child: Transform.rotate(
                   angle: _arrowAngle,
@@ -503,7 +565,7 @@ class _LocationGameState extends State<LocationGame>
                   right: 0,
                   child: Center(
                       child: Text(
-                    '現在地に移動中...',
+                    _loadingMessage,
                     style: TextStyle(color: Colors.white, fontSize: 18),
                   ))),
               Center(
@@ -515,6 +577,138 @@ class _LocationGameState extends State<LocationGame>
             ],
           ),
         ],
+        _nearByRamenShop != {} && _isOpenRamenModal
+            ? Container(
+                child: AnimatedPadding(
+                  padding: EdgeInsets.all(20), // モーダルの周りに余白を設定
+                  duration: Duration(milliseconds: 300), // アニメーションの時間
+                  curve: Curves.easeInOut, // アニメーションの曲線
+                  child: Center(
+                    child: Container(
+                      width: 300, // 幅200px
+                      height: 350, // 高さ200px
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(16), // 角丸
+                        boxShadow: [
+                          BoxShadow(
+                              color: Colors.black.withOpacity(0.1),
+                              blurRadius: 10)
+                        ],
+                      ),
+                      child: Stack(children: [
+                        // 右上の閉じるボタン
+                        Positioned(
+                          top: 10,
+                          right: 10,
+                          child: IconButton(
+                            icon: Icon(Icons.close),
+                            onPressed: () {
+                              setState(() {
+                                _isLoading = false;
+                                _isOpenRamenModal = false;
+                              }); // モーダルを閉じる
+                            },
+                          ),
+                        ),
+                        Center(
+                            child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            // テキスト情報
+                            Padding(
+                              padding: const EdgeInsets.all(8.0),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.center,
+                                children: [
+                                  Text(
+                                    'ラーメン屋が見つかりました',
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                  SizedBox(height: 4),
+                                  Text(
+                                    "${_nearByRamenShop['radiusText']}",
+                                    style:
+                                        TextStyle(fontWeight: FontWeight.bold),
+                                  ),
+                                  SizedBox(height: 16),
+                                  Text(
+                                    "${_nearByRamenShop['name']}",
+                                    style: TextStyle(
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                  SizedBox(height: 8),
+                                  Text(
+                                    "評価: ${_nearByRamenShop['rating'].toStringAsFixed(1)}",
+                                    style: TextStyle(
+                                        fontSize: 18,
+                                        fontWeight: FontWeight.bold),
+                                  ),
+                                  SizedBox(height: 16),
+                                  Text(
+                                    "${_nearByRamenShop['vicinity']}",
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                  SizedBox(height: 8),
+                                  TextButton(
+                                    style: ButtonStyle(
+                                      backgroundColor: WidgetStateProperty.all(
+                                          Colors.blue), // 背景色
+                                      foregroundColor: WidgetStateProperty.all(
+                                          Colors.white), // 文字色
+                                    ),
+                                    onPressed: () {
+                                      // お店に移動
+                                      setState(() {
+                                        _isOpenRamenModal = false;
+                                        _isLoading = false;
+                                      });
+                                      LatLng latLng = LatLng(
+                                          _nearByRamenShop['geometry']
+                                              ['location']['lat'],
+                                          _nearByRamenShop['geometry']
+                                              ['location']['lng']);
+                                      _changePosition(latLng,
+                                          forceZoom: 18, isNoGoalMoving: true);
+                                    },
+                                    child: Text(
+                                      "　この店に行く!!　",
+                                      style: TextStyle(
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.bold),
+                                    ),
+                                  ),
+                                  TextButton(
+                                    onPressed: () {
+                                      // GoogleMapへのリンクを開く処理
+                                      String url =
+                                          "https://www.google.com/maps/place/?q=place_id:${_nearByRamenShop['place_id']}";
+                                      print(
+                                          "ID: ${_nearByRamenShop['place_id']}, url: $url");
+                                      _launchURL(url);
+                                    },
+                                    child: Text(
+                                      "GoogleMapでお店を見る",
+                                      style: TextStyle(color: Colors.blue),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        )),
+                      ]),
+                    ),
+                  ),
+                ),
+              )
+            : SizedBox.shrink(),
       ]),
     );
   }

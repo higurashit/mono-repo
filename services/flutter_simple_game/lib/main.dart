@@ -20,6 +20,12 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      theme: ThemeData(
+        fontFamily: 'Meiryo', // ここで全体のフォントをメイリオに
+        textTheme: TextTheme(
+          bodyLarge: TextStyle(fontFamilyFallback: ['Hiragino Sans', 'Arial']),
+        ),
+      ),
       home: TopPage(), // トップページを最初に表示
       routes: {
         // ルートを登録
