@@ -8,6 +8,12 @@
 	<key>NSLocationAlwaysUsageDescription</key>
 	<string>位置情報を常に使用する必要があります</string>
 	<!-- /for LocationGame -->
+	<!-- for GrowthGame -->
+	<key>NSHealthShareUsageDescription</key>
+	<string>歩数データを取得するために使用します。</string>
+	<key>NSHealthUpdateUsageDescription</key>
+	<string>歩数データを更新するために使用します。</string>
+	<!-- /for GrowthGame -->
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>

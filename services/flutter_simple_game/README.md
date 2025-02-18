@@ -16,13 +16,22 @@ A new Flutter project.
 
 ## Hello World（Android Emulator）
 - cd /c/Android/cmdline-tools/latest/bin
+<!-- システムイメージを確認・取得 -->
+- ./sdkmanager.bat --list | grep "system-images;"
 - export ESYS_IMAGE="system-images;android-34;google_apis;x86_64"
+- export ESYS_IMAGE="system-images;android-34;google_apis_playstore;x86_64"
 - ./sdkmanager.bat $ESYS_IMAGE
+<!-- デバイスを確認・取得 -->
+- ./avdmanager.bat list device
 - ./avdmanager.bat create avd -n my_avd -k $ESYS_IMAGE --device "pixel_4"
 - emulator -avd my_avd
 - flutter run # エミュレータ起動中はエミュレータで動作する
 
-# Create APK file
+## Develop and Testing
+- flutter pub get
+- flutter run
+
+## Create APK file
 - flutter build apk --release
 - create apk-file to `build/app/outputs/flutter-apk/app-release.apk`
 
