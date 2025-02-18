@@ -1,0 +1,55 @@
+NEW IDEA
+金言「重要ではあるが、差別化につながらない作業」
+AWSのPowerPointまねて作ろう
+
+・AWS Fargate Spot？！
+・Lambdaはコールドスタートなくなった
+・API Gatewayの低価格帯ができた（$1/100万リクエスト）
+・リソースハンドリングがなくなり、HTTPエンドポイントのみ（ロジックはLambdaのみ）
+
+
+●Amplify
+Amplify CLI：バックエンドを知らなくても作れる
+Amplify Framework：React連携（＝CLIしなくても使えるってことのように聞こえる）
+Amplify Cosole：CodeCommit+S3+CI/CD
+
+Frameworkで新しいものが追加：Predeictions（AI/ML）
+  日本語を英語に翻訳
+  画像認識
+  Machine Lerning
+
+Amplify DataStore
+  ローカルストレージ
+  基本アプリケーションはDataStoreを利用する
+  DataStoreはAWS連携不要、AWSアカウントと紐付けると、データがオンライン時に更新される
+  コンフリクト対応：DynamoDBはBaseとDeltaの2テーブルでマージする
+  Auto-mergeを使えば、オブジェクトを展開して項目単位で更新をかける（項目内の配列も複数同時追加は可能）
+
+●Athena
+AthenaはS3に対するクエリだった
+がFaderatedでLambda呼び出しが可能になる
+AWSサービスへのクエリであれば、テンプレートもある
+
+●AQUA
+Advanced Query Accelerator
+お金かかるが、めちゃ早い
+AWSが技術投資している
+
+●ES
+UltraWarm
+Hotnode（SSD）、Warmnode（磁気ディスク）
+ログ分析用にクラウドに最適化されたアーキテクチャ（バックエンドをS3にすることにより、90%のコスト削減）
+versionは6.8を指定
+
+●その他
+Single-Sign-On；ActiveDirectory、AWS SSOに加えて、AzureとかGsuite
+既存IdP経由でAWSサービスを使える（アカウントの統一）
+今まではGsuiteにユーザがいても、AWSアカウントを作らないといけなくなった
+が、IAMで自動ユーザ作成されるようになった
+
+AWS SSOがCLI v2で使えるようになった
+ローカルでSSO認証することにより、AWSサービスが使えるようになった（ローカルに保存する必要がない）
+
+AWS Wavelength：
+リージョンにアクセスするときの通信遅延（レイテンシ）を小さくしたい
+5Gを提供しているプロバイダ（KDDI）のネットワークのすぐ先におく、1桁msの遅延で到達できる
