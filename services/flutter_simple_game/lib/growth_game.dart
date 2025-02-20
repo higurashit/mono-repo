@@ -1,10 +1,10 @@
 import 'dart:async';
 import 'dart:io';
-import 'dart:math';
+// import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:health/health.dart';
 import 'package:permission_handler/permission_handler.dart';
-import 'package:sensors_plus/sensors_plus.dart';
+// import 'package:sensors_plus/sensors_plus.dart';
 import 'package:carp_serializable/carp_serializable.dart';
 import 'utils.dart';
 
@@ -65,7 +65,7 @@ class _GrowthGameState extends State<GrowthGame> {
       .toList();
 
   // 加速度センサーの値
-  List<double> accelerometerValues = [];
+  // List<double> accelerometerValues = [];
 
   @override
   void initState() {
@@ -74,49 +74,49 @@ class _GrowthGameState extends State<GrowthGame> {
     health.getHealthConnectSdkStatus();
 
     // ゲームの更新処理
-    Future.doWhile(() async {
-      // 毎フレームごとにステップ数をカウント
-      await health.writeHealthData(
-          value: _nofSteps.toDouble(),
-          type: HealthDataType.STEPS,
-          startTime: DateTime.now(),
-          recordingMethod: RecordingMethod.manual);
-      await Future.delayed(Duration(milliseconds: 10000)); // 毎秒カウント
-      return true;
-    });
+    // Future.doWhile(() async {
+    //   // 毎フレームごとにステップ数をカウント
+    //   await health.writeHealthData(
+    //       value: _nofSteps.toDouble(),
+    //       type: HealthDataType.STEPS,
+    //       startTime: DateTime.now(),
+    //       recordingMethod: RecordingMethod.manual);
+    //   await Future.delayed(Duration(milliseconds: 10000)); // 毎秒カウント
+    //   return true;
+    // });
     super.initState();
   }
 
   // 加速度センサーのイベントを監視
-  void startListening() {
-    accelerometerEvents.listen((AccelerometerEvent event) async {
-      accelerometerValues.add(event.x);
-      accelerometerValues.add(event.y);
-      accelerometerValues.add(event.z);
+  // void startListening() {
+  //   accelerometerEvents.listen((AccelerometerEvent event) async {
+  //     accelerometerValues.add(event.x);
+  //     accelerometerValues.add(event.y);
+  //     accelerometerValues.add(event.z);
 
-      // 歩数をカウントするロジック（単純な例）
-      if (_detectStep(accelerometerValues)) {
-        setState(() {
-          _nofSteps++;
-        });
-        print("Steps: $_nofSteps");
-      }
-    });
-  }
+  //     // 歩数をカウントするロジック（単純な例）
+  //     if (_detectStep(accelerometerValues)) {
+  //       setState(() {
+  //         _nofSteps++;
+  //       });
+  //       print("Steps: $_nofSteps");
+  //     }
+  //   });
+  // }
 
   // 簡単な歩数検出アルゴリズム（加速度の変化に基づく）
-  bool _detectStep(List<double> values) {
-    // ここに実際の歩数検出アルゴリズムを実装
-    double threshold = 1.5; // 加速度の閾値を設定
-    double totalAcceleration =
-        values.fold(0, (sum, value) => sum + (value * value));
-    double magnitude = sqrt(totalAcceleration);
+  // bool _detectStep(List<double> values) {
+  //   // ここに実際の歩数検出アルゴリズムを実装
+  //   double threshold = 1.5; // 加速度の閾値を設定
+  //   double totalAcceleration =
+  //       values.fold(0, (sum, value) => sum + (value * value));
+  //   double magnitude = sqrt(totalAcceleration);
 
-    if (magnitude > threshold) {
-      return true; // 歩数検出
-    }
-    return false;
-  }
+  //   if (magnitude > threshold) {
+  //     return true; // 歩数検出
+  //   }
+  //   return false;
+  // }
 
   /// Install Google Health Connect on this phone.
   Future<void> installHealthConnect() async =>
