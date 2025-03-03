@@ -35,6 +35,35 @@ A new Flutter project.
 - flutter build apk --release
 - create apk-file to `build/app/outputs/flutter-apk/app-release.apk`
 
+## Clean Project①
+- flutter clean
+- flutter pub upgrade --major-versions
+- flutter pub get
+- cd android
+- ./gradlew.bat clean
+- ./gradlew.bat build --refresh-dependencies
+- flutter run
+
+## Clean Project②
+- flutter clean
+- rm -rf .dart_tool android/.gradle android/.idea build
+- flutter pub get
+- cd android
+- ./gradlew clean
+- ./gradlew build
+- cd ..
+
+## Check setting if errors
+
+### Wrong JDK Path
+- flutter doctor -v
+  - Java bynary at: <path to Android JBR... not to Amazon Corretto!!>
+  - flutter --jdk-dir "C:\Path to\Amazon Corretto\jdk17.0.14_7\"
+
+### Wrong Gralde JDK Path
+- cd android
+- ./gradlew -version
+
 ## Getting Started
 
 This project is a starting point for a Flutter application.

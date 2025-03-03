@@ -73,14 +73,19 @@ class _GrowthGameState extends State<GrowthGame> {
     health.configure();
     health.getHealthConnectSdkStatus();
 
+    // 加速度センサーのイベントを監視
+    startListening();
+
     // ゲームの更新処理
     Future.doWhile(() async {
       // 毎フレームごとにステップ数をカウント
-      await health.writeHealthData(
-          value: _nofSteps.toDouble(),
-          type: HealthDataType.STEPS,
-          startTime: DateTime.now(),
-          recordingMethod: RecordingMethod.manual);
+      if (_nofSteps > 0) {
+        await health.writeHealthData(
+            value: _nofSteps.toDouble(),
+            type: HealthDataType.STEPS,
+            startTime: DateTime.now(),
+            recordingMethod: RecordingMethod.manual);
+      }
       await Future.delayed(Duration(milliseconds: 10000)); // 毎秒カウント
       return true;
     });
@@ -89,9 +94,11 @@ class _GrowthGameState extends State<GrowthGame> {
 
   // 加速度センサーのイベントを監視
   void startListening() {
-    accelerometerEvents.listen((AccelerometerEvent event) async {
+    final double gravity = 9.80665;
+    accelerometerEventStream().listen((AccelerometerEvent event) async {
+      accelerometerValues = [];
       accelerometerValues.add(event.x);
-      accelerometerValues.add(event.y);
+      accelerometerValues.add(event.y - gravity); // y軸は重力加速度を減算
       accelerometerValues.add(event.z);
 
       // 歩数をカウントするロジック（単純な例）
@@ -107,12 +114,13 @@ class _GrowthGameState extends State<GrowthGame> {
   // 簡単な歩数検出アルゴリズム（加速度の変化に基づく）
   bool _detectStep(List<double> values) {
     // ここに実際の歩数検出アルゴリズムを実装
-    double threshold = 1.5; // 加速度の閾値を設定
+    double threshold = 5.0; // 加速度の閾値を設定
     double totalAcceleration =
         values.fold(0, (sum, value) => sum + (value * value));
     double magnitude = sqrt(totalAcceleration);
 
     if (magnitude > threshold) {
+      print('magnitude: $magnitude');
       return true; // 歩数検出
     }
     return false;
