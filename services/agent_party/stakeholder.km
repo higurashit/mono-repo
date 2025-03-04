@@ -1,0 +1,158 @@
+{
+    "root": {
+        "data": {
+            "id": "d87k3frz94g0",
+            "created": 1741099028800,
+            "text": "自分",
+            "expandState": "expand"
+        },
+        "children": [
+            {
+                "data": {
+                    "id": "d87kfzyp8m80",
+                    "created": 1741100013112,
+                    "text": "仕事",
+                    "layout": null,
+                    "expandState": "expand"
+                },
+                "children": [
+                    {
+                        "data": {
+                            "id": "d87kkf9zbdc0",
+                            "created": 1741100359903,
+                            "text": "秘書"
+                        },
+                        "children": [
+                            {
+                                "data": {
+                                    "id": "d87kkhoc9kg0",
+                                    "created": 1741100365125,
+                                    "text": "Produnt Owner/経営層"
+                                },
+                                "children": []
+                            },
+                            {
+                                "data": {
+                                    "id": "d87kko9suk80",
+                                    "created": 1741100379483,
+                                    "text": "Project Manager/管理層"
+                                },
+                                "children": []
+                            },
+                            {
+                                "data": {
+                                    "id": "d87kkucrmy00",
+                                    "created": 1741100392723,
+                                    "text": "企画/デザイン"
+                                },
+                                "children": []
+                            },
+                            {
+                                "data": {
+                                    "id": "d87kl00szig0",
+                                    "created": 1741100405060,
+                                    "text": "プログラマ/テスター"
+                                },
+                                "children": []
+                            },
+                            {
+                                "data": {
+                                    "id": "d87knh7bkgw0",
+                                    "created": 1741100599188,
+                                    "text": "マーケティング"
+                                },
+                                "children": []
+                            }
+                        ]
+                    }
+                ]
+            },
+            {
+                "data": {
+                    "id": "d87kfvwuu800",
+                    "created": 1741100004294,
+                    "text": "自分",
+                    "layout_mind_offset": {
+                        "x": 7.999999761581421,
+                        "y": 142.999995738268
+                    },
+                    "layout": null,
+                    "expandState": "expand"
+                },
+                "children": [
+                    {
+                        "data": {
+                            "id": "d87kmla31s80",
+                            "created": 1741100529698,
+                            "text": "趣味"
+                        },
+                        "children": []
+                    },
+                    {
+                        "data": {
+                            "id": "d87kk0vofgg0",
+                            "created": 1741100328563,
+                            "text": "パートナー"
+                        },
+                        "children": []
+                    }
+                ]
+            },
+            {
+                "data": {
+                    "id": "d87klt4ba4g0",
+                    "created": 1741100468399,
+                    "text": "家族",
+                    "layout_mind_offset": {
+                        "x": 505.9999849200252,
+                        "y": 122.99999633431457
+                    }
+                },
+                "children": [
+                    {
+                        "data": {
+                            "id": "d87km0lqofc0",
+                            "created": 1741100484691,
+                            "text": "親"
+                        },
+                        "children": []
+                    },
+                    {
+                        "data": {
+                            "id": "d87km2hbig80",
+                            "created": 1741100488777,
+                            "text": "パートナー"
+                        },
+                        "children": []
+                    },
+                    {
+                        "data": {
+                            "id": "d87km41wuzc0",
+                            "created": 1741100492199,
+                            "text": "子ども"
+                        },
+                        "children": []
+                    }
+                ]
+            },
+            {
+                "data": {
+                    "id": "d87kfdq99hk0",
+                    "created": 1741099964713,
+                    "text": "created by vscode-mindmap(i18n)",
+                    "priority": null,
+                    "progress": 9,
+                    "resource": [
+                        "Memo"
+                    ],
+                    "layout": null,
+                    "expandState": "expand"
+                },
+                "children": []
+            }
+        ]
+    },
+    "template": "default",
+    "theme": "fresh-blue",
+    "version": "1.4.43"
+}
