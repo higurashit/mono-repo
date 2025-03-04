@@ -1,0 +1,465 @@
+{
+    "root": {
+        "data": {
+            "id": "d87l32glkso0",
+            "created": 1741101820924,
+            "text": "働く人"
+        },
+        "children": [
+            {
+                "data": {
+                    "id": "d87l3ayc2880",
+                    "created": 1741101839411,
+                    "text": "SIマネージャ"
+                },
+                "children": [
+                    {
+                        "data": {
+                            "id": "d87l3tx9ly80",
+                            "created": 1741101880705,
+                            "text": "技術"
+                        },
+                        "children": [
+                            {
+                                "data": {
+                                    "id": "d87l4kvit540",
+                                    "created": 1741101939373,
+                                    "text": "トレンド調査"
+                                },
+                                "children": [
+                                    {
+                                        "data": {
+                                            "id": "d87lbuuvf6w0",
+                                            "created": 1741102509650,
+                                            "text": "秘書に調査を依頼する",
+                                            "priority": 1
+                                        },
+                                        "children": []
+                                    }
+                                ]
+                            },
+                            {
+                                "data": {
+                                    "id": "d87l4mzo4zk0",
+                                    "created": 1741101943977,
+                                    "text": "お試し実装"
+                                },
+                                "children": [
+                                    {
+                                        "data": {
+                                            "id": "d87llovz8ig0",
+                                            "created": 1741103280298,
+                                            "text": "秘書に作りたいものを伝える",
+                                            "priority": 1,
+                                            "expandState": "expand"
+                                        },
+                                        "children": [
+                                            {
+                                                "data": {
+                                                    "id": "d87lc5sfufs0",
+                                                    "created": 1741102533448,
+                                                    "text": "プログラマに初期実装させる",
+                                                    "priority": 2
+                                                },
+                                                "children": []
+                                            },
+                                            {
+                                                "data": {
+                                                    "id": "d87lcj4nx7k0",
+                                                    "created": 1741102562485,
+                                                    "text": "プログラマを使って変更する",
+                                                    "priority": 2
+                                                },
+                                                "children": []
+                                            }
+                                        ]
+                                    }
+                                ]
+                            },
+                            {
+                                "data": {
+                                    "id": "d87l4qshwn40",
+                                    "created": 1741101952250,
+                                    "text": "技術レビュー"
+                                },
+                                "children": [
+                                    {
+                                        "data": {
+                                            "id": "d87lk62eu3s0",
+                                            "created": 1741103160964,
+                                            "text": "秘書に観点を抽出してもらう",
+                                            "priority": 1,
+                                            "expandState": "expand"
+                                        },
+                                        "children": [
+                                            {
+                                                "data": {
+                                                    "id": "d87len3boow0",
+                                                    "created": 1741102727840,
+                                                    "text": "PMにプロジェクト管理観点でレビューさせる",
+                                                    "priority": 2
+                                                },
+                                                "children": []
+                                            },
+                                            {
+                                                "data": {
+                                                    "id": "d87leg0qxcg0",
+                                                    "created": 1741102712446,
+                                                    "text": "知財・ガバナンスにリスク観点でレビューさせる",
+                                                    "priority": 2
+                                                },
+                                                "children": []
+                                            },
+                                            {
+                                                "data": {
+                                                    "id": "d87leau6y5s0",
+                                                    "created": 1741102701166,
+                                                    "text": "アーキテクトにインフラ・アプリアーキテクチャをレビューさせる",
+                                                    "priority": 2
+                                                },
+                                                "children": []
+                                            }
+                                        ]
+                                    }
+                                ]
+                            },
+                            {
+                                "data": {
+                                    "id": "d87l50r477s0",
+                                    "created": 1741101973935,
+                                    "text": "イベント参加"
+                                },
+                                "children": [
+                                    {
+                                        "data": {
+                                            "id": "d87lm21cy540",
+                                            "created": 1741103308922,
+                                            "text": "秘書におすすめを探してもらう",
+                                            "priority": 1
+                                        },
+                                        "children": []
+                                    },
+                                    {
+                                        "data": {
+                                            "id": "d87lfdsj4xc0",
+                                            "created": 1741102785960,
+                                            "text": "秘書からおすすめを流してもらう",
+                                            "priority": 3
+                                        },
+                                        "children": []
+                                    },
+                                    {
+                                        "data": {
+                                            "id": "d87lfrkjfoo0",
+                                            "created": 1741102815952,
+                                            "text": "秘書に予定を入れてもらう",
+                                            "priority": 3
+                                        },
+                                        "children": []
+                                    },
+                                    {
+                                        "data": {
+                                            "id": "d87lfv3wr480",
+                                            "created": 1741102823653,
+                                            "text": "秘書にリマインドしてもらう",
+                                            "priority": 3
+                                        },
+                                        "children": []
+                                    }
+                                ]
+                            },
+                            {
+                                "data": {
+                                    "id": "d87l52i31ds0",
+                                    "created": 1741101977742,
+                                    "text": "アウトプット"
+                                },
+                                "children": [
+                                    {
+                                        "data": {
+                                            "id": "d87lgkukabk0",
+                                            "created": 1741102879685,
+                                            "text": "秘書にテーマを渡して得意そうな人材を紹介してもらう",
+                                            "priority": 1
+                                        },
+                                        "children": [
+                                            {
+                                                "data": {
+                                                    "id": "d87lgt8v4gw0",
+                                                    "created": 1741102897964,
+                                                    "text": "その人に初期アウトプットを依頼する",
+                                                    "priority": 2
+                                                },
+                                                "children": []
+                                            },
+                                            {
+                                                "data": {
+                                                    "id": "d87lh0inc080",
+                                                    "created": 1741102913793,
+                                                    "text": "その人に変更やレビューの支援をしてもらう",
+                                                    "priority": 2
+                                                },
+                                                "children": []
+                                            }
+                                        ]
+                                    }
+                                ]
+                            }
+                        ]
+                    },
+                    {
+                        "data": {
+                            "id": "d87l3zajwko0",
+                            "created": 1741101892392,
+                            "text": "育成"
+                        },
+                        "children": [
+                            {
+                                "data": {
+                                    "id": "d87l5weufy00",
+                                    "created": 1741102042850,
+                                    "text": "キャリア支援"
+                                },
+                                "children": [
+                                    {
+                                        "data": {
+                                            "id": "d87ljl6hqyo0",
+                                            "created": 1741103115498,
+                                            "text": "育成コーチに相談する",
+                                            "priority": 2
+                                        },
+                                        "children": []
+                                    }
+                                ]
+                            },
+                            {
+                                "data": {
+                                    "id": "d87l5zsrui80",
+                                    "created": 1741102050222,
+                                    "text": "ロードマップ策定"
+                                },
+                                "children": [
+                                    {
+                                        "data": {
+                                            "id": "d87ljrpnh0g0",
+                                            "created": 1741103129718,
+                                            "text": "育成コーチに相談する",
+                                            "priority": 2
+                                        },
+                                        "children": []
+                                    }
+                                ]
+                            },
+                            {
+                                "data": {
+                                    "id": "d87l65riq6o0",
+                                    "created": 1741102063207,
+                                    "text": "目標設定"
+                                },
+                                "children": [
+                                    {
+                                        "data": {
+                                            "id": "d87ljvi6lqg0",
+                                            "created": 1741103137973,
+                                            "text": "育成コーチに相談する",
+                                            "priority": 2
+                                        },
+                                        "children": []
+                                    }
+                                ]
+                            },
+                            {
+                                "data": {
+                                    "id": "d87l6ckm2go0",
+                                    "created": 1741102078027,
+                                    "text": "モチベート"
+                                },
+                                "children": [
+                                    {
+                                        "data": {
+                                            "id": "d87ljxu8huo0",
+                                            "created": 1741103143055,
+                                            "text": "育成コーチに相談する",
+                                            "priority": 2
+                                        },
+                                        "children": []
+                                    }
+                                ]
+                            }
+                        ]
+                    },
+                    {
+                        "data": {
+                            "id": "d87l40ufaxc0",
+                            "created": 1741101895771,
+                            "text": "組織・経営"
+                        },
+                        "children": [
+                            {
+                                "data": {
+                                    "id": "d87l6iwigdc0",
+                                    "created": 1741102091807,
+                                    "text": "案件・数値管理"
+                                },
+                                "children": []
+                            },
+                            {
+                                "data": {
+                                    "id": "d87l6nke4nc0",
+                                    "created": 1741102101958,
+                                    "text": "要員管理"
+                                },
+                                "children": []
+                            },
+                            {
+                                "data": {
+                                    "id": "d87l7a3jkhk0",
+                                    "created": 1741102151005,
+                                    "text": "ビジネスプランニング・事業創出"
+                                },
+                                "children": [
+                                    {
+                                        "data": {
+                                            "id": "d87ln5gt2xc0",
+                                            "created": 1741103394750,
+                                            "text": "秘書にまとめ方を相談する",
+                                            "priority": 1
+                                        },
+                                        "children": []
+                                    },
+                                    {
+                                        "data": {
+                                            "id": "d87lntn6bgo0",
+                                            "created": 1741103447378,
+                                            "text": "秘書に調査してもらう",
+                                            "priority": 1
+                                        },
+                                        "children": []
+                                    },
+                                    {
+                                        "data": {
+                                            "id": "d87lndw7yaw0",
+                                            "created": 1741103413096,
+                                            "text": "経営層と意見交換する（会議）",
+                                            "priority": 4
+                                        },
+                                        "children": []
+                                    },
+                                    {
+                                        "data": {
+                                            "id": "d87lnkz17dk0",
+                                            "created": 1741103428504,
+                                            "text": "ユーザと意見交換する（会議）",
+                                            "priority": 4
+                                        },
+                                        "children": []
+                                    }
+                                ]
+                            },
+                            {
+                                "data": {
+                                    "id": "d87l7i8hths0",
+                                    "created": 1741102168719,
+                                    "text": "R&D、施策起案"
+                                },
+                                "children": []
+                            }
+                        ]
+                    },
+                    {
+                        "data": {
+                            "id": "d87l43uwnkw0",
+                            "created": 1741101902330,
+                            "text": "プロジェクト対応"
+                        },
+                        "children": [
+                            {
+                                "data": {
+                                    "id": "d87l80itj9c0",
+                                    "created": 1741102208526,
+                                    "text": "提案支援"
+                                },
+                                "children": []
+                            },
+                            {
+                                "data": {
+                                    "id": "d87l84a2km80",
+                                    "created": 1741102216704,
+                                    "text": "コンサルティング"
+                                },
+                                "children": []
+                            },
+                            {
+                                "data": {
+                                    "id": "d87l86001xc0",
+                                    "created": 1741102220448,
+                                    "text": "ステークホルダマネジメント"
+                                },
+                                "children": []
+                            },
+                            {
+                                "data": {
+                                    "id": "d87lb6zeyvs0",
+                                    "created": 1741102457682,
+                                    "text": "コミュニケーションマネジメント"
+                                },
+                                "children": []
+                            },
+                            {
+                                "data": {
+                                    "id": "d87l9xriu7k0",
+                                    "created": 1741102359250,
+                                    "text": "スコープマネジメント"
+                                },
+                                "children": []
+                            },
+                            {
+                                "data": {
+                                    "id": "d87l8djksag0",
+                                    "created": 1741102236869,
+                                    "text": "品質マネジメント"
+                                },
+                                "children": []
+                            },
+                            {
+                                "data": {
+                                    "id": "d87l8jdp59s0",
+                                    "created": 1741102249575,
+                                    "text": "進捗マネジメント"
+                                },
+                                "children": []
+                            },
+                            {
+                                "data": {
+                                    "id": "d87l8lt7ueg0",
+                                    "created": 1741102254867,
+                                    "text": "コストマネジメント"
+                                },
+                                "children": []
+                            },
+                            {
+                                "data": {
+                                    "id": "d87l8pg8r1c0",
+                                    "created": 1741102262789,
+                                    "text": "調達マネジメント"
+                                },
+                                "children": []
+                            },
+                            {
+                                "data": {
+                                    "id": "d87l8rqs35s0",
+                                    "created": 1741102267780,
+                                    "text": "リスクマネジメント"
+                                },
+                                "children": []
+                            }
+                        ]
+                    }
+                ]
+            }
+        ]
+    },
+    "template": "default",
+    "theme": "fresh-blue",
+    "version": "1.4.43"
+}
