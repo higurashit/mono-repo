@@ -8,14 +8,14 @@
 
 そこで、CDK を学びながら、その過程を記事としてまとめることにしました。
 
-## Cdk の概要
+## CDK の概要
 
 [AWS Cloud Development Kit（CDK）](https://aws.amazon.com/jp/cdk/)は、CloudFormation 同様、AWS のインフラをプログラムで定義できるツールです。従来の CloudFormation との違いは、CDK は TypeScript や Python などの一般的なプログラミング言語で記述できることです。
 
 プログラミング言語で記述できるため、コードの再利用や構造化がしやすくなり、インフラの管理が CloudFormation よりも効率化されます。
 私は、便利である一方で、**リファクタリングの機会が少ないインフラストラクチャにおいて、可読性の低いソースコードが生成された場合の不が大きい**と考えていました。
 
-まあそれは CloudFormation でも同じことが言えますし、CloudFormation で環境依存を取り扱う際の Mapping の煩雑さ、条件分岐の煩雑さが取り除かれるというメリットから、これからはどんどん Cdk を使っていこうと思います。
+まあそれは CloudFormation でも同じことが言えますし、CloudFormation で環境依存を取り扱う際の Mapping の煩雑さ、条件分岐の煩雑さが取り除かれるというメリットから、これからはどんどん CDK を使っていこうと思います。
 
 ## AWS CDK のセットアップ
 
@@ -43,6 +43,14 @@ nodist + 22.14.0
 nodist 22.14.0
 node -v # v22.14.0
 npm -v # 10.2.3
+```
+
+```bat:aws-cli最新化 (コマンドプロンプトで実行)
+msiexec.exe /i https://awscli.amazonaws.com/AWSCLIV2.msi
+```
+
+```bash
+aws --version # aws-cli/2.24.20 Python/3.12.9 Windows/10 exe/AMD64
 ```
 
 AWS CDK をインストールします。
@@ -73,12 +81,158 @@ npm i
 
 ### CDK の動作確認
 
-CDK が正しく動作するか確認するために、以下のコマンドを実行し、CloudFormation のテンプレートが正しく生成されることを確認します。
+npm コマンドで動作確認をしていきます。
 
 ```bash
-cdk synth
+cat package.json # npm scrpts を確認
+npm run test # PASS test/cdk_tutorial.test.ts
+npm run cdk synth
 ```
 
-問題なく実行されると、生成された CloudFormation のテンプレートが出力されます。
+```yaml
+Resources:
+  CDKMetadata:
+    Type: AWS::CDK::Metadata
+    Properties:
+      Analytics: v2:deflate64:H4sIAAAAAAAA/zPSM7Qw1DNUTCwv1k1OydbNyUzSCy5JTM7WyctPSdXLKtYvMzLSMzTRM1DMKs7M1C0qzSvJzE3VC4LQAL6qgsE/AAAA
+    Metadata:
+      aws:cdk:path: CDKTutorialStack/CDKMetadata/Default
+    Condition: CDKMetadataAvailable
+Conditions:
+  CDKMetadataAvailable:
+    Fn::Or:
+      - Fn::Or:
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - af-south-1
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - ap-east-1
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - ap-northeast-1
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - ap-northeast-2
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - ap-northeast-3
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - ap-south-1
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - ap-south-2
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - ap-southeast-1
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - ap-southeast-2
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - ap-southeast-3
+      - Fn::Or:
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - ap-southeast-4
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - ca-central-1
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - ca-west-1
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - cn-north-1
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - cn-northwest-1
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - eu-central-1
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - eu-central-2
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - eu-north-1
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - eu-south-1
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - eu-south-2
+      - Fn::Or:
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - eu-west-1
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - eu-west-2
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - eu-west-3
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - il-central-1
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - me-central-1
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - me-south-1
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - sa-east-1
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - us-east-1
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - us-east-2
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - us-west-1
+      - Fn::Equals:
+          - Ref: AWS::Region
+          - us-west-2
+Parameters:
+  BootstrapVersion:
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: /cdk-bootstrap/hnb659fds/version
+    Description: Version of the CDK Bootstrap resources in this environment, automatically retrieved from SSM Parameter Store.
+```
 
-これで AWS CDK のセットアップが完了しました。次は、実際に AWS リソースを定義し、デプロイする方法を解説します。
+ただし、以下の Notice メッセージが出力されます。
+
+```bash
+NOTICES         (What's this? https://github.com/aws/aws-cdk/wiki/CLI-Notices)
+
+32775   (cli): CLI versions and CDK library versions have diverged
+
+        Overview: Starting in CDK 2.179.0, CLI versions will no longer be in
+                  lockstep with CDK library versions. CLI versions will now be
+                  released as 2.1000.0 and continue with 2.1001.0, etc.
+
+        Affected versions: cli: >=2.0.0 <=2.1005.0
+
+        More information at: https://github.com/aws/aws-cdk/issues/32775
+```
+
+どうやら cdk のバージョンが>=2.0.0 <=2.1005.0 に収まっており、ライブラリのバージョンと分岐するという注意が載っているようです。
+
+[この記事](https://aws.amazon.com/jp/blogs/opensource/aws-cdk-is-splitting-construct-library-and-cli/)を見ると、このままで大丈夫そうなので、放置します。
+※以下のように[バージョンを揃えて構築する手順](https://github.com/aws/aws-cdk/issues/32775)になっている場合は修正が必要のようです。
+
+```bash
+# This no longer works, there will be two different versions
+$ CDK_VERSION=2.714.0
+$ npm install aws-cdk-lib@$CDK_VERSION
+$ npm install aws-cdk@$CDK_VERSION
+
+# Do this instead (install the latest 2.x)
+$ npm install aws-cdk@^2
+```
+
+ということで、CDK の環境構築が完了しました。
