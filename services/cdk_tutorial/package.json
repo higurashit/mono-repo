@@ -5,6 +5,7 @@
     "cdk_tutorial": "bin/cdk_tutorial.js"
   },
   "scripts": {
+    "export-aws-profile": "echo please exec: export AWS_DEFAULT_PROFILE=default",
     "build": "tsc",
     "watch": "tsc -w",
     "test": "jest",
