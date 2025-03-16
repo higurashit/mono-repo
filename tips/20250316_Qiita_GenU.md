@@ -365,7 +365,7 @@ export const createStacks = (app: cdk.App, params: StackInput) => {
 };
 ```
 
-最大で以下の 6 つの子スタックを作成するようですが、[前回の記事](https://qiita.com/siruko/items/625801b9e1847b305c1e)の通り、デプロイオプションによって作成されるスタックが変わります。
+GenU の CDK は最大で以下の 6 つの子スタックを作成します。
 
 - `CloudFrontWafStack`
 - `RagKnowledgeBaseStack`
@@ -375,9 +375,11 @@ export const createStacks = (app: cdk.App, params: StackInput) => {
 - `GenerativeAiUseCasesDashboardStack`
 
 デプロイオプションを設定しない場合、デフォルトでは `GenerativeAiUseCasesStack` スタックのみ作成する作りになっています。
-そのため、`cdk list` コマンドでは `GenerativeAiUseCasesStack` スタックしか出力されなかったということです。
+そのため、`cdk list` コマンドでは `GenerativeAiUseCasesStack` スタックしか出力されませんでした。
 
-6 つのスタックの作成条件について見ていきましょう
+他の 5 つのスタックについては、[前回の記事で少し触れたデプロイオプション](https://qiita.com/siruko/items/625801b9e1847b305c1e#%E3%83%87%E3%83%97%E3%83%AD%E3%82%A4%E3%82%AA%E3%83%97%E3%82%B7%E3%83%A7%E3%83%B3%E3%81%AE%E7%A2%BA%E8%AA%8D)を指定することで作成されます。
+
+それぞれのスタックの作成条件について見ていきましょう。
 
 #### CloudFrontWafStack の作成条件
 
