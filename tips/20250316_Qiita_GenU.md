@@ -399,7 +399,7 @@ CloudFrontWafStack は、[AWS WAF による制限を有効化する](https://aws
   dev: {
     hostName: 'genai',
     domainName: 'example.com',
-    hostedZoneId: 'XXXXXXXXXXXXXXXXXXXX',
+    hostedZoneId: 'Z0123456789ABCDEFGHIJ',
   }
 ```
 
