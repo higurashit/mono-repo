@@ -369,10 +369,10 @@ GenU の CDK は最大で以下の 6 つの子スタックを作成します。
 
 - `CloudFrontWafStack`
 - `RagKnowledgeBaseStack`
-- `WebSearchAgentStack`
+- `AgentStack`
 - `GuardrailStack`
 - `GenerativeAiUseCasesStack`
-- `GenerativeAiUseCasesDashboardStack`
+- `DashboardStack`
 
 デプロイオプションを設定しない場合、デフォルトでは `GenerativeAiUseCasesStack` スタックのみ作成する作りになっています。
 そのため、`cdk list` コマンドでは `GenerativeAiUseCasesStack` スタックしか出力されませんでした。
@@ -420,9 +420,9 @@ RagKnowledgeBaseStack は、[RAG チャット (Knowledge Base) ユースケー�
   }
 ```
 
-#### WebSearchAgentStack の作成条件
+#### AgentStack の作成条件
 
-WebSearchAgentStack は、[Agent チャットユースケースの有効化](https://aws-samples.github.io/generative-ai-use-cases-jp/DEPLOY_OPTION.html#agent-%E3%83%81%E3%83%A3%E3%83%83%E3%83%88%E3%83%A6%E3%83%BC%E3%82%B9%E3%82%B1%E3%83%BC%E3%82%B9%E3%81%AE%E6%9C%89%E5%8A%B9%E5%8C%96) を行うと作成されます。
+AgentStack は、[Agent チャットユースケースの有効化](https://aws-samples.github.io/generative-ai-use-cases-jp/DEPLOY_OPTION.html#agent-%E3%83%81%E3%83%A3%E3%83%83%E3%83%88%E3%83%A6%E3%83%BC%E3%82%B9%E3%82%B1%E3%83%BC%E3%82%B9%E3%81%AE%E6%9C%89%E5%8A%B9%E5%8C%96) を行うと作成されます。
 
 パラメータ例として、`packages/cdk/parameter.ts` に以下を設定します。
 
@@ -448,9 +448,9 @@ GuardrailStack は、[ガードレール](https://aws-samples.github.io/generati
 
 GenerativeAiUseCasesStack は唯一、無条件で作成されるスタックです。
 
-#### GenerativeAiUseCasesDashboardStack の作成条件
+#### DashboardStack の作成条件
 
-GenerativeAiUseCasesDashboardStack は、[モニタリング用のダッシュボードの有効化](https://aws-samples.github.io/generative-ai-use-cases-jp/DEPLOY_OPTION.html#%E3%83%A2%E3%83%8B%E3%82%BF%E3%83%AA%E3%83%B3%E3%82%B0%E7%94%A8%E3%81%AE%E3%83%80%E3%83%83%E3%82%B7%E3%83%A5%E3%83%9C%E3%83%BC%E3%83%89%E3%81%AE%E6%9C%89%E5%8A%B9%E5%8C%96) を行うと作成されます。
+DashboardStack は、[モニタリング用のダッシュボードの有効化](https://aws-samples.github.io/generative-ai-use-cases-jp/DEPLOY_OPTION.html#%E3%83%A2%E3%83%8B%E3%82%BF%E3%83%AA%E3%83%B3%E3%82%B0%E7%94%A8%E3%81%AE%E3%83%80%E3%83%83%E3%82%B7%E3%83%A5%E3%83%9C%E3%83%BC%E3%83%89%E3%81%AE%E6%9C%89%E5%8A%B9%E5%8C%96) を行うと作成されます。
 
 パラメータ例として、`packages/cdk/parameter.ts` に以下を設定します。
 
