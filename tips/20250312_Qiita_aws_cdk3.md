@@ -8,14 +8,14 @@
 
 そこで、CDK を学びながら、その過程を記事としてまとめることにしました。
 
-## (事前準備) CDK の理解
+## 前回までのおさらい
 
 前回までで、以下が完了しました。
 
-- [CDK のセットアップ](https://qiita.com/siruko/items/fd25fdcf89615cb85262)
-- [AWS CDK の動作確認](https://qiita.com/siruko/items/73169f986b4173e3d3a5)
+- [①AWS CDK のセットアップ](https://qiita.com/siruko/items/fd25fdcf89615cb85262)
+- [②AWS CDK の動作確認](https://qiita.com/siruko/items/73169f986b4173e3d3a5)
 
-今回はいよいよ、GenU の理解を深めていきたいと思います。
+今回は GenU の概要を確認したいと思います。
 
 ## GenU 活用パターン集
 
@@ -28,7 +28,7 @@ GenU では、以下の機能やオプションが活用パターンごとに紹
 - 独自のユースケースを **作成したい**
 
 後述しますが、RAG は料金がかかるため、後ほどじっくりと検討したいと思います。後ろの 2 つは試験的というよりかは実務的なユースケースのようです。
-ということで、まずは **「生成 AI のユースケースを体験したい」** という視点から始めていきます。
+ということで、まずは **「生成 AI のユースケースを体験したい」** から始めていきます。
 
 ## GenU の料金について
 
@@ -74,7 +74,7 @@ git clone https://github.com/aws-samples/generative-ai-use-cases-jp
 
 ### モデルの有効化
 
-また、以下の注意書きにある通り、**cdk.json に記載されているモデルを有効化** する必要があります。
+以下の注意書きにある通り、**cdk.json に記載されているモデルを有効化** する必要があります。
 
 :::note warn
 /packages/cdk/cdk.json に記載されている modelRegion リージョンの modelIds (テキスト生成) 及び imageGenerationModelIds (画像生成) を有効化してください。([Amazon Bedrock の Model access 画面: us-east-1](https://us-east-1.console.aws.amazon.com/bedrock/home?region=us-east-1#/modelaccess))
@@ -192,7 +192,7 @@ git clone https://github.com/aws-samples/generative-ai-use-cases-jp
 
 ### デプロイオプションの確認
 
-さらに、[デプロイオプション](https://aws-samples.github.io/generative-ai-use-cases-jp/DEPLOY_OPTION.html)を確認します。
+続いて[デプロイオプション](https://aws-samples.github.io/generative-ai-use-cases-jp/DEPLOY_OPTION.html)を確認します。
 `packages/cdk/parameter.ts`の envs に記載されている環境ごとにパラメータを設定でき、`ragEnabled: true` を追記すると Amazon Kandra が作成されます。
 （default は`ragEnabled: false`のためこのまま作成します）
 
@@ -304,4 +304,4 @@ npm -w packages/cdk run cdk deploy -- --all
 }
 ```
 
-次回は、実際にデプロイを行い、トライ＆エラーを重ねていきたいと思います。
+次回は、GenU の CDK スタックの確認をしていきたいと思います。
