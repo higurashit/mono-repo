@@ -14,7 +14,7 @@
 - [①AWS CDK のセットアップ](https://qiita.com/siruko/items/fd25fdcf89615cb85262)
 - [②AWS CDK の動作確認](https://qiita.com/siruko/items/73169f986b4173e3d3a5)
 
-今回は GenU の概要を確認したいと思います。
+今回は GenU の概要を解説したいと思います。
 
 ## GenU 活用パターン集
 
@@ -189,13 +189,16 @@ git clone https://github.com/aws-samples/generative-ai-use-cases-jp
 }
 ```
 
-### デプロイオプションの確認
+### デプロイオプション
 
-続いて[デプロイオプション](https://aws-samples.github.io/generative-ai-use-cases-jp/DEPLOY_OPTION.html)を確認します。
-`packages/cdk/parameter.ts`の envs に記載されている環境ごとにパラメータを設定でき、`ragEnabled: true` を追記すると Amazon Kandra が作成されます。
-（default は`ragEnabled: false`のためこのまま作成します）
+続いて[デプロイオプション](https://aws-samples.github.io/generative-ai-use-cases-jp/ja/DEPLOY_OPTION.html)を解説します。
 
-デプロイオプションでは、この他にも[Agent チャットユースケースを有効化](https://aws-samples.github.io/generative-ai-use-cases-jp/DEPLOY_OPTION.html#agent-%E3%83%81%E3%83%A3%E3%83%83%E3%83%88%E3%83%A6%E3%83%BC%E3%82%B9%E3%82%B1%E3%83%BC%E3%82%B9%E3%81%AE%E6%9C%89%E5%8A%B9%E5%8C%96) するオプションである`agentEnabled: true`などの説明が記載されています。
+デプロイオプションは GenU の構築オプション設定であり、機能の有効化／無効化や、既存の生成 AI 基盤モデルを利用する場合にモデル ID を指定することができます。
+
+環境依存でない場合は `packages/cdk/cdk.json` にパラメータを設定し、環境依存の場合は `packages/cdk/parameter.ts` の envs に記載されている環境ごとにパラメータを設定します。
+例えば、`ragEnabled: true` を追記すると Amazon Kandra が作成されます。
+
+デプロイオプションでは、この他にも[Agent チャットユースケースを有効化](https://aws-samples.github.io/generative-ai-use-cases-jp/ja/DEPLOY_OPTION.html#agent-%E3%83%81%E3%83%A3%E3%83%83%E3%83%88%E3%83%A6%E3%83%BC%E3%82%B9%E3%82%B1%E3%83%BC%E3%82%B9%E3%81%AE%E6%9C%89%E5%8A%B9%E5%8C%96) するオプションである`agentEnabled: true`などの説明が記載されています。
 構築後に色々試すことにします。
 
 ```diff_typescript:packages/cdk/parameter.ts
@@ -303,7 +306,7 @@ npm -w packages/cdk run cdk deploy -- --all
 }
 ```
 
-次回は、GenU の CDK スタックの確認をしていきたいと思います。
+次回は、GenU の CDK スタックの解説をしていきます。
 
 ## (参考) GenU のバックエンド (CDK) 詳細解説投稿一覧
 
