@@ -4,7 +4,7 @@
 
 私は業務でデータ利活用基盤を取り扱っていること、2024 AWS Japan Top Engineer に選出されたということから、[AWS GenU](https://aws-samples.github.io/generative-ai-use-cases-jp/) およびそれに必要なデータ基盤の探求 ([Snowflake](https://www.snowflake.com/ja/), [dbt](https://www.getdbt.com/), [Iceberg](https://iceberg.apache.org/), etc) に取り組む必要があると考えています。
 
-本投稿では、[GenU のバックエンドである CDK コード](https://github.com/aws-samples/generative-ai-use-cases-jp/tree/main/packages/cdk)を詳細に解説します。
+本投稿では、[GenU のデプロイオプション](https://aws-samples.github.io/generative-ai-use-cases-jp/ja/DEPLOY_OPTION.html)を詳細に解説します。
 自身そして閲覧して頂いた皆様の GenU への理解が少しでも深まり、生成 AI の民主化につながっていければと考えています。
 
 ## GenU とは
@@ -632,7 +632,7 @@ const envs: Record<string, Partial<StackInput>> = {
         account: params.account,
         region: params.region,
       },
-*     description: params.anonymousUsageTracking
++     description: params.anonymousUsageTracking
         ? 'Generative AI Use Cases JP (uksb-1tupboc48)'
         : undefined,
       params: params,
@@ -951,6 +951,6 @@ const envs: Record<string, Partial<StackInput>> = {
 - [⑬DashBoard スタックの解説](https://qiita.com/siruko/items/73a75c7d0146d12ecbc3)
 - [⑭GenU の Outputs の解説](https://qiita.com/siruko/items/afc14128a5b1a15ab69c)
 
-## (参考) GenU のバックエンド (CDK) 詳細解説投稿一覧
+## (参考) GenU のデプロイオプション詳細解説投稿一覧
 
 - [GenU のデプロイオプション詳細解説](https://qiita.com/siruko/items/49c43862007603f3f70c)
