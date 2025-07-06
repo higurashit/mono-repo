@@ -16,15 +16,53 @@ A new Flutter project.
 
 ## Hello World（Android Emulator）
 - cd /c/Android/cmdline-tools/latest/bin
+<!-- システムイメージを確認・取得 -->
+- ./sdkmanager.bat --list | grep "system-images;"
 - export ESYS_IMAGE="system-images;android-34;google_apis;x86_64"
+- export ESYS_IMAGE="system-images;android-34;google_apis_playstore;x86_64"
 - ./sdkmanager.bat $ESYS_IMAGE
+<!-- デバイスを確認・取得 -->
+- ./avdmanager.bat list device
 - ./avdmanager.bat create avd -n my_avd -k $ESYS_IMAGE --device "pixel_4"
 - emulator -avd my_avd
 - flutter run # エミュレータ起動中はエミュレータで動作する
 
-# Create APK file
+## Develop and Testing
+- flutter pub get
+- flutter run
+
+## Create APK file
 - flutter build apk --release
 - create apk-file to `build/app/outputs/flutter-apk/app-release.apk`
+
+## Clean Project①
+- flutter clean
+- flutter pub upgrade --major-versions
+- flutter pub get
+- cd android
+- ./gradlew.bat clean
+- ./gradlew.bat build --refresh-dependencies
+- flutter run
+
+## Clean Project②
+- flutter clean
+- rm -rf .dart_tool android/.gradle android/.idea build
+- flutter pub get
+- cd android
+- ./gradlew clean
+- ./gradlew build
+- cd ..
+
+## Check setting if errors
+
+### Wrong JDK Path
+- flutter doctor -v
+  - Java bynary at: <path to Android JBR... not to Amazon Corretto!!>
+  - flutter --jdk-dir "C:\Path to\Amazon Corretto\jdk17.0.14_7\"
+
+### Wrong Gralde JDK Path
+- cd android
+- ./gradlew -version
 
 ## Getting Started
 

@@ -7,6 +7,7 @@ import 'merge_game.dart';
 import 'drag_game.dart';
 import 'merge_game2.dart';
 import 'location_game.dart';
+import 'growth_game.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -35,6 +36,7 @@ class MyApp extends StatelessWidget {
         '/drag_game': (context) => DragGame(),
         '/merge_game2': (context) => MergeGame2(),
         '/location_game': (context) => LocationGame(),
+        '/growth_game': (context) => GrowthGame(),
       },
       locale: Locale('ja', 'JP'), // 日本語に設定
       supportedLocales: [
@@ -102,6 +104,13 @@ class TopPage extends StatelessWidget {
                   Navigator.pushNamed(context, '/location_game');
                 },
                 child: Text('位置情報ゲームを始める'),
+              ),
+              SizedBox(height: 20),
+              ElevatedButton(
+                onPressed: () {
+                  Navigator.pushNamed(context, '/growth_game');
+                },
+                child: Text('万歩計ゲームを始める'),
               )
             ]),
       ),

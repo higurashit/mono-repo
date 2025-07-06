@@ -33,6 +33,63 @@ class _LocationGameState extends State<LocationGame>
     {'name': '東京タワー', 'location': LatLng(35.6585805, 139.7454329)},
     {'name': 'スカイツリー', 'location': LatLng(35.710063, 139.810700)},
     {'name': '大阪城', 'location': LatLng(34.687300, 135.525900)},
+    {'name': 'Hareza Tower', 'location': LatLng(35.7324188, 139.7152077)},
+    {'name': '富士山', 'location': LatLng(35.2139, 138.4339)},
+    {'name': '利尻島', 'location': LatLng(45.1286111, 141.1805555)},
+    {'name': '佐渡島', 'location': LatLng(37.8533333, 138.3205555)},
+    {'name': '小豆島', 'location': LatLng(34.5033333, 134.2413888)},
+    {'name': '硫黄島', 'location': LatLng(30.7822222, 130.2791666)},
+    {'name': '奄美大島', 'location': LatLng(28.3202777, 129.5322222)},
+    {'name': '西表島', 'location': LatLng(24.4191666, 123.7777777)},
+    {'name': '井の頭公園', 'location': LatLng(35.7, 139.5744444)},
+    {'name': '兼六園', 'location': LatLng(36.5619444, 136.6619444)},
+    {'name': '嵐山', 'location': LatLng(35.0108333, 135.6791666)},
+    {'name': '造幣局', 'location': LatLng(34.6966666, 135.5208333)},
+    {'name': '舞鶴公園', 'location': LatLng(38.3555555, 140.3761111)},
+    {'name': '六本木ヒルズ', 'location': LatLng(35.6602777, 139.7291666)},
+    {'name': 'ランドマークタワー', 'location': LatLng(35.4544444, 139.6313888)},
+    {'name': '朱鷺メッセ', 'location': LatLng(37.9258333, 139.0597222)},
+    {'name': '比叡山ドライブウエイ', 'location': LatLng(35.0513888, 135.8386111)},
+    {'name': '黄金山', 'location': LatLng(34.3672222, 132.4905555)},
+    {'name': '福岡タワー', 'location': LatLng(33.5933333, 130.3513888)},
+    {'name': '弘前城', 'location': LatLng(40.6075, 140.4638888)},
+    {'name': '盛岡城', 'location': LatLng(39.7005555, 141.15)},
+    {'name': '仙台城（青葉城）', 'location': LatLng(38.2530555, 140.8555555)},
+    {'name': '会津若松城', 'location': LatLng(37.4875, 139.9297222)},
+    {'name': '水戸城', 'location': LatLng(36.3752777, 140.4769444)},
+    {'name': '小田原城', 'location': LatLng(35.2513888, 139.1536111)},
+    {'name': '松本城', 'location': LatLng(36.2386111, 137.9688888)},
+    {'name': '金沢城', 'location': LatLng(36.5636111, 136.6594444)},
+    {'name': '名古屋城', 'location': LatLng(35.1858333, 136.8994444)},
+    {'name': '彦根城', 'location': LatLng(35.2763888, 136.2516666)},
+    {'name': '安土城', 'location': LatLng(35.1558333, 136.1391666)},
+    {'name': '二条城', 'location': LatLng(35.0141666, 135.7477777)},
+    {'name': '大阪城', 'location': LatLng(34.6875, 135.5258333)},
+    {'name': '姫路城', 'location': LatLng(34.8394444, 134.6938888)},
+    {'name': '松山城', 'location': LatLng(33.8455555, 132.7655555)},
+    {'name': '宇和島城', 'location': LatLng(33.2191666, 132.565)},
+    {'name': '首里城', 'location': LatLng(26.2169444, 127.7194444)},
+    {'name': '五稜郭跡', 'location': LatLng(41.79722222, 140.7569444)},
+    {'name': '三内丸山遺跡', 'location': LatLng(40.81138889, 140.6966667)},
+    {'name': '多賀城跡', 'location': LatLng(38.30666667, 140.9883333)},
+    {'name': '秋田城跡', 'location': LatLng(39.74083333, 140.0811111)},
+    {'name': '白水阿弥陀堂', 'location': LatLng(37.03611111, 140.8372222)},
+    {'name': '虎塚古墳', 'location': LatLng(36.37388889, 140.5694444)},
+    {'name': '富岡製糸場', 'location': LatLng(36.25527778, 138.8875)},
+    {'name': '岩宿遺跡', 'location': LatLng(36.4, 139.2875)},
+    {'name': '埼玉古墳群', 'location': LatLng(36.12694444, 139.4791667)},
+    {'name': '上総国分尼寺跡', 'location': LatLng(35.49972222, 140.1180556)},
+    {'name': '湯島聖堂', 'location': LatLng(35.70055556, 139.7669444)},
+    {'name': '大森貝塚', 'location': LatLng(35.59083333, 139.7291667)},
+    {'name': '佐渡金山遺跡', 'location': LatLng(38.04194444, 138.2591667)},
+    {'name': '関ヶ原古戦場', 'location': LatLng(35.36777778, 136.4655556)},
+    {'name': '登呂遺跡', 'location': LatLng(34.95583333, 138.4080556)},
+    {'name': '北条氏史跡', 'location': LatLng(35.04638889, 138.9372222)},
+    {'name': '清水寺', 'location': LatLng(34.99472222, 135.785)},
+    {'name': '龍河洞', 'location': LatLng(33.60277778, 133.7452778)},
+    {'name': '吉野ヶ里遺跡', 'location': LatLng(33.32555556, 130.3841667)},
+    {'name': '平戸和蘭商館跡', 'location': LatLng(33.37222222, 129.5569444)},
+    {'name': '斎場御嶽', 'location': LatLng(26.17333333, 127.8272222)},
   ];
   LatLng _currentPosition = LatLng(35.681236, 139.767125); // 初期位置（東京駅）
   String? _currentDestinationName;
@@ -55,6 +112,9 @@ class _LocationGameState extends State<LocationGame>
   final String _placesApiKey = dotenv.env['GOOGLE_PLACES_API_KEY'] ?? '';
   var _nearByRamenShop = {};
   bool _isOpenRamenModal = false;
+  int _stepCount = 0;
+  bool _isDispDestDistance = false; // 目的地までの距離を表示するか（最初はなし）
+  bool _isDispDestBearing = false; // 目的地の方角を表示するか（最初はなし）
 
   @override
   void initState() {
@@ -116,6 +176,10 @@ class _LocationGameState extends State<LocationGame>
           position: _currentDestinationLocation!,
           icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueRed),
         ));
+        // 目的地までのヒントを削除
+        _stepCount = 0;
+        _isDispDestDistance = false;
+        _isDispDestBearing = false;
       });
     }
   }
@@ -233,6 +297,11 @@ class _LocationGameState extends State<LocationGame>
 
       // 移動
       _changePosition(randomPosition);
+      _stepCount++;
+      setState(() {
+        _isDispDestDistance = _stepCount >= 1;
+        _isDispDestBearing = _stepCount >= 2;
+      });
     } else {
       _controller.repeat();
     }
@@ -245,9 +314,9 @@ class _LocationGameState extends State<LocationGame>
 
   // 方位を元にランダムで進む先のpositionを設定
   LatLng _moveInDirection(double angle) {
-    // ランダムな距離を決定（目的地までの0.1倍～1.5倍までがランダムで決定）
+    // ランダムな距離を決定（目的地までの0.5倍～1.5倍までがランダムで決定）
     double distance = randomInRange(
-        _currentDestinationDistance! / 10, _currentDestinationDistance! * 1.5);
+        _currentDestinationDistance! * 0.5, _currentDestinationDistance! * 1.2);
     double distanceInDegrees = distance / 111320; // 1度 ≈ 111.32km
 
     // 進む方向を計算
@@ -289,7 +358,7 @@ class _LocationGameState extends State<LocationGame>
       // 画面表示内容を取得
       _currentDisplayDistance = _displayDistance(_currentDestinationDistance);
       // ゴール時は目的地まで移動する
-      if (_isGoal) {
+      if (!isNoGoalMoving && _isGoal) {
         _mapController.animateCamera(
           CameraUpdate.newLatLngZoom(_currentDestinationLocation!, 18),
         );
@@ -462,12 +531,16 @@ class _LocationGameState extends State<LocationGame>
                         ),
                         SizedBox(height: 3),
                         Text(
-                          _currentDisplayDistance!,
+                          _isDispDestDistance
+                              ? _currentDisplayDistance!
+                              : '距離: ????km',
                           style: TextStyle(color: Colors.white, fontSize: 16),
                         ),
                       ],
                     )),
-                !_isGoal && _cullentDestinationBearing != null
+                !_isGoal &&
+                        _cullentDestinationBearing != null &&
+                        _isDispDestBearing
                     ? Positioned(
                         top: 12,
                         left: 20,
@@ -486,7 +559,7 @@ class _LocationGameState extends State<LocationGame>
             ),
           )
         ],
-        // 位置情報ボタン
+        // 現在位置情報ボタン
         Positioned(
           top: 20,
           right: 80,

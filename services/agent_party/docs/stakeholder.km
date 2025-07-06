@@ -1,0 +1,276 @@
+{
+    "root": {
+        "data": {
+            "id": "d87k3frz94g0",
+            "created": 1741099028800,
+            "text": "自分",
+            "expandState": "expand"
+        },
+        "children": [
+            {
+                "data": {
+                    "id": "d87kfzyp8m80",
+                    "created": 1741100013112,
+                    "text": "仕事",
+                    "layout": null,
+                    "expandState": "expand"
+                },
+                "children": [
+                    {
+                        "data": {
+                            "id": "d87kkf9zbdc0",
+                            "created": 1741100359903,
+                            "text": "秘書",
+                            "resource": [
+                                "直接会話(双方向)"
+                            ],
+                            "note": "秘書は"
+                        },
+                        "children": [
+                            {
+                                "data": {
+                                    "id": "d87kkhoc9kg0",
+                                    "created": 1741100365125,
+                                    "text": "Produnt Owner/経営層",
+                                    "resource": [
+                                        "間接的に会話(片方向)"
+                                    ]
+                                },
+                                "children": []
+                            },
+                            {
+                                "data": {
+                                    "id": "d87kko9suk80",
+                                    "created": 1741100379483,
+                                    "text": "Project Manager/管理層",
+                                    "resource": [
+                                        "間接的に会話(片方向)"
+                                    ]
+                                },
+                                "children": []
+                            },
+                            {
+                                "data": {
+                                    "id": "d87kkucrmy00",
+                                    "created": 1741100392723,
+                                    "text": "デザイン",
+                                    "resource": [
+                                        "間接的に会話(片方向)"
+                                    ]
+                                },
+                                "children": []
+                            },
+                            {
+                                "data": {
+                                    "id": "d87kl00szig0",
+                                    "created": 1741100405060,
+                                    "text": "プログラマ/テスター",
+                                    "resource": [
+                                        "間接的に会話(片方向)"
+                                    ]
+                                },
+                                "children": []
+                            },
+                            {
+                                "data": {
+                                    "id": "d87knh7bkgw0",
+                                    "created": 1741100599188,
+                                    "text": "企画/マーケティング",
+                                    "resource": [
+                                        "間接的に会話(片方向)"
+                                    ]
+                                },
+                                "children": []
+                            },
+                            {
+                                "data": {
+                                    "id": "d87ldldkcbs0",
+                                    "created": 1741102645741,
+                                    "text": "アーキテクト",
+                                    "resource": [
+                                        "間接的に会話(片方向)"
+                                    ]
+                                },
+                                "children": []
+                            },
+                            {
+                                "data": {
+                                    "id": "d87ldo7juyo0",
+                                    "created": 1741102651908,
+                                    "text": "知財・ガバナンス",
+                                    "resource": [
+                                        "間接的に会話(片方向)"
+                                    ]
+                                },
+                                "children": []
+                            },
+                            {
+                                "data": {
+                                    "id": "d87lj8ef2340",
+                                    "created": 1741103087679,
+                                    "text": "育成スペシャリスト・コーチ",
+                                    "resource": [
+                                        "間接的に会話(片方向)"
+                                    ]
+                                },
+                                "children": []
+                            }
+                        ]
+                    }
+                ]
+            },
+            {
+                "data": {
+                    "id": "d87kfvwuu800",
+                    "created": 1741100004294,
+                    "text": "趣味",
+                    "layout_mind_offset": {
+                        "x": 7.999999761581421,
+                        "y": 142.999995738268
+                    },
+                    "layout": null,
+                    "expandState": "expand"
+                },
+                "children": [
+                    {
+                        "data": {
+                            "id": "d87kmla31s80",
+                            "created": 1741100529698,
+                            "text": "友人",
+                            "resource": [
+                                "直接会話(双方向)"
+                            ]
+                        },
+                        "children": [
+                            {
+                                "data": {
+                                    "id": "d87l18y5rk80",
+                                    "created": 1741101678318,
+                                    "text": "専門サイト調査",
+                                    "resource": [
+                                        "間接的に会話(片方向)"
+                                    ]
+                                },
+                                "children": []
+                            },
+                            {
+                                "data": {
+                                    "id": "d87l1jiw6tk0",
+                                    "created": 1741101701340,
+                                    "text": "ニュース・トレンド調査",
+                                    "resource": [
+                                        "間接的に会話(片方向)"
+                                    ]
+                                },
+                                "children": []
+                            }
+                        ]
+                    }
+                ]
+            },
+            {
+                "data": {
+                    "id": "d87klt4ba4g0",
+                    "created": 1741100468399,
+                    "text": "家族",
+                    "layout_mind_offset": {
+                        "x": -4.999999850988729,
+                        "y": -188.99999436736096
+                    },
+                    "resource": [
+                        "意見照会"
+                    ]
+                },
+                "children": [
+                    {
+                        "data": {
+                            "id": "d87km0lqofc0",
+                            "created": 1741100484691,
+                            "text": "親"
+                        },
+                        "children": []
+                    },
+                    {
+                        "data": {
+                            "id": "d87km2hbig80",
+                            "created": 1741100488777,
+                            "text": "パートナー"
+                        },
+                        "children": []
+                    },
+                    {
+                        "data": {
+                            "id": "d87km41wuzc0",
+                            "created": 1741100492199,
+                            "text": "子ども"
+                        },
+                        "children": []
+                    }
+                ]
+            },
+            {
+                "data": {
+                    "id": "d87kfdq99hk0",
+                    "created": 1741099964713,
+                    "text": "created by vscode-mindmap(i18n)",
+                    "priority": null,
+                    "progress": 9,
+                    "resource": [
+                        "Memo"
+                    ],
+                    "layout": null,
+                    "expandState": "expand"
+                },
+                "children": []
+            },
+            {
+                "data": {
+                    "id": "d87ktn8ma1s0",
+                    "created": 1741101082512,
+                    "text": "他人",
+                    "resource": [
+                        "意見照会"
+                    ]
+                },
+                "children": [
+                    {
+                        "data": {
+                            "id": "d87ktvfowo80",
+                            "created": 1741101100354,
+                            "text": "ペルソナA"
+                        },
+                        "children": []
+                    },
+                    {
+                        "data": {
+                            "id": "d87ktx2h7ts0",
+                            "created": 1741101103909,
+                            "text": "ペルソナB"
+                        },
+                        "children": []
+                    },
+                    {
+                        "data": {
+                            "id": "d87ktyd5m340",
+                            "created": 1741101106731,
+                            "text": "・・・・"
+                        },
+                        "children": []
+                    },
+                    {
+                        "data": {
+                            "id": "d87ku0k1z5k0",
+                            "created": 1741101111502,
+                            "text": "ペルソナZ",
+                            "resource": []
+                        },
+                        "children": []
+                    }
+                ]
+            }
+        ]
+    },
+    "template": "default",
+    "theme": "fresh-blue",
+    "version": "1.4.43"
+}
